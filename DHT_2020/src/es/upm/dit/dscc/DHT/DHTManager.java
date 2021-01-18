@@ -55,7 +55,7 @@ public class DHTManager extends ReceiverAdapter  implements DHTUserInterface {
 			LOGGER.severe("localAddress is null!!!!");
 		}
 		this.tableManager    = new TableManager(localAddress, nServersMax, nReplica);
-		this.dht             = new DHTJGroups(sendMessages, mutex, tableManager);
+		this.dht             = new DHTOperaciones(sendMessages, mutex, tableManager);
 		this.viewManager     = new ViewManager(localAddress, nServersMax, nReplica,
 									sendMessages, tableManager);
 		this.receiveMessages = new ReceiveMessages(sendMessages, dht, mutex, viewManager);

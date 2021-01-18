@@ -20,7 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-public class DHTJGroups implements DHTUserInterface {
+public class DHTOperaciones implements DHTUserInterface {
 
 	private java.util.logging.Logger LOGGER = DHTMain.LOGGER;
 
@@ -28,7 +28,7 @@ public class DHTJGroups implements DHTUserInterface {
 	private operationBlocking mutex;
 	private TableManager      tableManager;
 
-	public DHTJGroups (
+	public DHTOperaciones (
 			SendMessagesDHT sendMessages, 
 			operationBlocking mutex,
 			TableManager tableManager) {
@@ -87,7 +87,11 @@ public class DHTJGroups implements DHTUserInterface {
 		}		
 		return hashMap.put(map);
 	}
-
+	
+	public Integer getMsg(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 	@Override
 	public Integer get(String key) {
@@ -209,6 +213,4 @@ public class DHTJGroups implements DHTUserInterface {
 		return tableManager.toString();
 
 	}
-
-
 }
