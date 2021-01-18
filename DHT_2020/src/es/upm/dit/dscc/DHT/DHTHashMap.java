@@ -57,6 +57,11 @@ public class DHTHashMap implements DHTUserInterface, Serializable{
 		return list;
 		
 	}
+	//Se añade
+	public Integer getMsg(String key) {
+		//TODO
+		return null;
+	}
 	
 	@Override
 	public Integer putMsg(DHT_Map map) {

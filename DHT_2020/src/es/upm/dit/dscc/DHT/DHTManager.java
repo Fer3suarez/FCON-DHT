@@ -124,6 +124,7 @@ public class DHTManager extends ReceiverAdapter  implements DHTUserInterface {
 		return dht.get(key);
 	}
 	
+	//Se añade
 	public Integer getMsg(String key) {
 		return null;
 	}
