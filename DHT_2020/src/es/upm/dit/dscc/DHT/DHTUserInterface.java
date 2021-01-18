@@ -12,6 +12,7 @@ public interface DHTUserInterface {
 
 	Integer get(String key);
 	
+	//Se añade
 	Integer getMsg(String key);
 
 	Integer remove(String key);
