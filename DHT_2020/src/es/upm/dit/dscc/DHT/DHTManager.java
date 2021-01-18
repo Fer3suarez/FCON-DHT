@@ -123,6 +123,10 @@ public class DHTManager extends ReceiverAdapter  implements DHTUserInterface {
 	public Integer get(String key) {
 		return dht.get(key);
 	}
+	
+	public Integer getMsg(String key) {
+		return null;
+	}
 
 	public Integer remove(String key) {
 		return dht.remove(key);
