@@ -70,6 +70,7 @@ public class DHTMain {
 	//////////////////////////////////////////////////////////////////////////
 
 	public DHT_Map putMap(Scanner sc) {
+		//Añadir Zookeeper y quitar JGroups
 		String  key     = null;
 		Integer value   = 0;
 
