@@ -98,21 +98,12 @@ public class DHTMain {
 		int     menuKey = 0;
 		boolean exit    = false;
 		Scanner sc      = new Scanner(System.in);
-		String cluster  = null;
-
 
 		String   key    = null;
 		Integer value   = 0;
 
-		if (args.length == 0) {
-			System.out.println("Incorrect arguments: dht.Main <Number_Group>");
-			//sc.close();
-			//return;
-		} else {
-			cluster = args[0];
-		} 
 
-		DHTManager        dht        = new DHTManager(cluster);
+		DHTManager        dht        = new DHTManager();
 		DHTMain           mainDHT    = new DHTMain();
 
 		while (!exit) {

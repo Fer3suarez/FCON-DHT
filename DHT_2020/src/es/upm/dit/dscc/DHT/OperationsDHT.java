@@ -4,8 +4,6 @@ import java.io.Serializable;
 //import java.util.Set;
 import java.util.HashMap;
 
-import org.jgroups.Address;
-
 public class OperationsDHT implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -18,7 +16,7 @@ public class OperationsDHT implements Serializable {
 	private int         posReplica;
 	private int         posServer;
 	private DHTUserInterface dht      = null;
-	private HashMap<Integer, Address> DHTServers;
+	private HashMap<Integer, String> DHTServers;
 	// private Set<String> 
 	// private ArrayList<Integer>
 
@@ -70,7 +68,7 @@ public class OperationsDHT implements Serializable {
 
 	//DHT_REPLICA
 	public OperationsDHT ( OperationEnum operation, 
-			HashMap<Integer, Address> DHTServers) {
+			HashMap<Integer, String> DHTServers) {
 		this.operation   = operation;
 		this.DHTServers  = DHTServers;
 	}
@@ -135,7 +133,7 @@ public class OperationsDHT implements Serializable {
 		return this.posReplica;
 	}
 	
-	public HashMap<Integer, Address> getDHTServers() {
+	public HashMap<Integer, String> getDHTServers() {
 		return this.DHTServers;
 	}
 

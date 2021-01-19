@@ -7,12 +7,6 @@ import java.util.Iterator;
 //import java.util.Iterator;
 import java.util.Set;
 
-import org.jgroups.JChannel;
-//import org.jgroups.Message;
-import org.jgroups.ReceiverAdapter;
-import org.jgroups.View;
-import org.jgroups.Address;
-
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
@@ -24,16 +18,13 @@ public class DHTOperaciones implements DHTUserInterface {
 
 	private java.util.logging.Logger LOGGER = DHTMain.LOGGER;
 
-	private SendMessagesDHT   sendMessages;     
 	private operationBlocking mutex;
 	private TableManager      tableManager;
 
 	public DHTOperaciones (
-			SendMessagesDHT sendMessages, 
 			operationBlocking mutex,
 			TableManager tableManager) {
 
-		this.sendMessages = sendMessages;
 		this.mutex        = mutex;
 		this.tableManager = tableManager;
 
@@ -60,7 +51,6 @@ public class DHTOperaciones implements DHTUserInterface {
 				value = putLocal(map);
 			} else {
 				LOGGER.fine("PUT: Remote replica");
-				sendMessages.sendPut(tableManager.DHTAddress(nodes[i]), map, true); 			
 			}
 		}
 		
@@ -68,7 +58,6 @@ public class DHTOperaciones implements DHTUserInterface {
 			LOGGER.finest("PUT: The operation is local");
 			value = putLocal(map);
 		} else {
-			sendMessages.sendPut(tableManager.DHTAddress(nodes[0]), map, false);
 			operation = mutex.sendOperation();
 			LOGGER.finest("Returned value in put: " + operation.getValue());
 			return operation.getValue();
@@ -96,11 +85,11 @@ public class DHTOperaciones implements DHTUserInterface {
 	@Override
 	public Integer get(String key) {
 
-		java.util.List<Address> DHTReplicas = new java.util.ArrayList<Address>();
+		java.util.List<String> DHTReplicas = new java.util.ArrayList<String>();
 		OperationsDHT operation; 
 
-		for (Iterator<Address> iterator = DHTReplicas.iterator(); iterator.hasNext();) {
-			Address address = (Address) iterator.next();
+		for (Iterator<String> iterator = DHTReplicas.iterator(); iterator.hasNext();) {
+			String address = (String) iterator.next();
 			LOGGER.finest("PUT: The operation is replicated");
 			if (tableManager.isDHTLocalReplica(key, address)) {
 				LOGGER.fine("PUT: Local replica");
@@ -113,7 +102,6 @@ public class DHTOperaciones implements DHTUserInterface {
 			LOGGER.finest("GET: The operation is local");
 			return getLocal(key);
 		} else {
-			sendMessages.sendGet(tableManager.DHTAddress(key), key, false);
 			operation = mutex.sendOperation();
 			LOGGER.fine("Returned value in get: " + operation.getValue());
 			return operation.getValue();
@@ -152,7 +140,6 @@ public class DHTOperaciones implements DHTUserInterface {
 				value = removeLocal(key);
 			} else {
 				LOGGER.fine("REMOVE: Remote replica");
-				sendMessages.sendRemove(tableManager.DHTAddress(nodes[i]), key, true); 			
 			}
 		}
 		
@@ -160,7 +147,6 @@ public class DHTOperaciones implements DHTUserInterface {
 			LOGGER.finest("PUT: The operation is local");
 			return removeLocal(key);
 		} else {
-			sendMessages.sendRemove(tableManager.DHTAddress(nodes[0]), key, false);
 			operation = mutex.sendOperation();
 			LOGGER.finest("Returned value in put: " + operation.getValue());
 			return operation.getValue();

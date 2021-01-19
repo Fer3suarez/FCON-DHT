@@ -6,11 +6,6 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/home/fm.suarez/Desktop/p-final-fcon/jgroups-4.0.0-SNAPSHOT.jar">
-		<attributes>
-			<attribute name="module" value="true"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="lib" path="/home/fm.suarez/Desktop/p-final-fcon/DHT_2020_JavaSE-11.jar">
 		<attributes>
 			<attribute name="module" value="true"/>

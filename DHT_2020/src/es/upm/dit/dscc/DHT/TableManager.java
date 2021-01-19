@@ -4,22 +4,19 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.jgroups.Address;
-import org.jgroups.View;
-
 public class TableManager {
 
 	private java.util.logging.Logger LOGGER = DHTMain.LOGGER;
 
 	private int       nReplica;
 	private int       nServersMax;
-	private Address   localAddress;
+	private String   localAddress;
   
-	private HashMap<Integer, Address> DHTServers = new HashMap<Integer, Address>();
+	private HashMap<Integer, String> DHTServers = new HashMap<Integer, String>();
 	private HashMap<Integer, DHTUserInterface> DHTTables = new HashMap<Integer, DHTUserInterface>();
 
 	
-	public TableManager(Address localAddress,
+	public TableManager(String localAddress,
 			int     nServersMax, 
 			int     nReplica) {
 
@@ -50,7 +47,7 @@ public class TableManager {
 
 	}
 
-	public Integer getPos (Address address) {
+	public Integer getPosicion (String address) {
 
 		int posAddress = 0;
 		for (int i = 0; i < DHTServers.size(); i++){
@@ -84,7 +81,7 @@ public class TableManager {
 		return DHTTables.get(getPos(key));
 	}
 
-	public boolean isDHTLocalReplica (String key, Address address) { 
+	public boolean isDHTLocalReplica (String key, String address) { 
 		//int pos = getPos(key);
 		return address.equals(localAddress);
 	}
@@ -111,13 +108,13 @@ public class TableManager {
 		return isLocal;
 	}
 
-	public Address DHTAddress (int pos) {
+	public String DHTAddress (int pos) {
 		//Address aux = DHTServers.get(pos);
 		return DHTServers.get(pos);
 	}
 
 
-	public Address DHTAddress (String key) {
+	public String DHTAddress (String key) {
 		// NO REPLICATION!!!!
 		int pos = getPos(key);
 		return DHTServers.get(pos);
@@ -127,8 +124,8 @@ public class TableManager {
 		return DHTTables;
 	}
 
-	java.util.List<Address> DHTReplicas (String key) {
-		java.util.List<Address> DHTReplicas = new java.util.ArrayList<Address>();
+	java.util.List<String> DHTReplicas (String key) {
+		java.util.List<String> DHTReplicas = new java.util.ArrayList<String>();
 
 		int pos = getPos(key);
 
@@ -143,7 +140,7 @@ public class TableManager {
 		return DHTReplicas;
 	}
 
-	HashMap<Integer, Address> getDHTServers() {
+	HashMap<Integer, String> getDHTServers() {
 		return DHTServers;
 	}
 	
@@ -167,7 +164,7 @@ public class TableManager {
 	@Override
 	public String toString() {
 		DHTUserInterface dht;
-		String aux = "Size: " + DHTTables.size() + " Local server: " + getPos(localAddress) +"\n";
+		String aux = "Size: " + DHTTables.size() + " Local server: " + getPosicion(localAddress) +"\n";
 		aux = aux + printDHTServers() + "\n";
 
 		for (int i = 0; i < nServersMax; i ++) {
