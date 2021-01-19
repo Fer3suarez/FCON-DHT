@@ -47,24 +47,12 @@ public class DHTMain {
 
 	public void initMembers(DHTUserInterface dht) {
 
-		//if (!dht.containsKey("Angel")) {
 			dht.put(new DHT_Map("Angel", 1));
-		//}
-		//if (!dht.containsKey("Bernardo")) {
 			dht.put(new DHT_Map("Bernardo", 2));
-		//}
-		//if (!dht.containsKey("Carlos")) {
 			dht.put(new DHT_Map("Carlos", 3));
-		//}
-		//if (!dht.containsKey("Daniel")) {
 			dht.put(new DHT_Map("Daniel", 4));
-		//}
-		//if (!dht.containsKey("Eugenio")) {
 			dht.put(new DHT_Map("Eugenio", 5));
-		//}
-		//if (!dht.containsKey("Zamorano")) {
 			dht.put(new DHT_Map("Zamorano", 6));
-		//}
 	}
 
 	//////////////////////////////////////////////////////////////////////////
