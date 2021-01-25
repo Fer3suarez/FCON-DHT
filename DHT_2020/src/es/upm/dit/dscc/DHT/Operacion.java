@@ -6,11 +6,9 @@ import java.util.Arrays;
 public class Operacion implements Serializable{
 	
 	private static final long serialVersionUID = 1L;
-	
 	private int[] nodos;
 	private int[] respuestas;
 	private OperationsDHT operacion;
-	
 	/*
 	 * 
 	 * Al objeto Operacion hay que pasarle la operacion, los nodos y el numero de Réplicas
@@ -83,6 +81,4 @@ public class Operacion implements Serializable{
 		return "Operacion [nodos=" + Arrays.toString(nodos) + ", respuestas=" + Arrays.toString(respuestas)
 				+ ", operacion=" + operacion + "]";
 	}
-	
-
 }
