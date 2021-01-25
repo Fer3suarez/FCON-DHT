@@ -3,7 +3,6 @@ package es.upm.dit.dscc.DHT;
 public class operationBlocking {
 
 	private java.util.logging.Logger LOGGER = DHTMain.LOGGER;
-	
 	private boolean        waiting = false;
 	private OperationsDHT  operation;
 	
@@ -12,7 +11,6 @@ public class operationBlocking {
 	}
 	
 	public synchronized OperationsDHT sendOperation() {
-
 		if (waiting) {
 			LOGGER.severe("Invoke sendOperation while it is waiting");
 			System.out.println("Invoke sendOperation while it is waiting");
@@ -28,13 +26,12 @@ public class operationBlocking {
 			return null;
 		}
 		LOGGER.fine("Operation: " +  operation.getOperation() + 
-				     ". Value: " + operation.getValue() +
+				     ". Value: "  + operation.getValue() +
 				     ". Status: " + operation.getStatus());
 		return operation;
 	}
 
 	public synchronized void receiveOperation(OperationsDHT  operation) {
-		
 		if (!waiting) {
 			LOGGER.severe("Invoke sendOperation while no waiting");
 			System.out.println("Invoke sendOperation while no waiting");
