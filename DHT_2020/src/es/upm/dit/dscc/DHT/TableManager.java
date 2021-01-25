@@ -133,6 +133,14 @@ public class TableManager {
 		return aux;
 	}
 
+	public String getLocalAddress() {
+		return localAddress;
+	}
+
+	public void setLocalAddress(String localAddress) {
+		this.localAddress = localAddress;
+	}
+
 	@Override
 	public String toString() {
 		DHTUserInterface dht;

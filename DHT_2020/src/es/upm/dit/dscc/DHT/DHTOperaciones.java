@@ -8,15 +8,17 @@ public class DHTOperaciones implements DHTUserInterface {
 
 	private java.util.logging.Logger LOGGER = DHTMain.LOGGER;
 	private operationBlocking mutex;
+	private int nReplicas;
 	private TableManager      tableManager;
 
 	public DHTOperaciones (
 			operationBlocking mutex,
-			TableManager tableManager) {
+			TableManager tableManager,
+			int nReplicas) {
 
 		this.mutex        = mutex;
 		this.tableManager = tableManager;
-
+		this.nReplicas    = nReplicas;
 	}
 
 	@Override

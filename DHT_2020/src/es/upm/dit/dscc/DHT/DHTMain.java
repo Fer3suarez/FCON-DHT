@@ -60,7 +60,7 @@ public class DHTMain {
 		int     menuKey = 0;
 		boolean exit    = false;
 		Scanner sc      = new Scanner(System.in);
-		String   key    = null;
+		String  key     = null;
 		Integer value   = 0;
 		DHTManager        dht        = new DHTManager();
 		DHTMain           mainDHT    = new DHTMain();
@@ -79,10 +79,10 @@ public class DHTMain {
 						System.out.println("The provised text provided is not an integer");
 					}
 				}
-				/*if (!dht.isQuorum()) {
+				if (!dht.isQuorum()) {
 					System.out.println("No hay quorum. No es posible ejecutar su elección");
 					continue;
-				}*/
+				}
 				switch (menuKey) {
 				case 1: // Put
 					dht.put(mainDHT.putMap(sc));

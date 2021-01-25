@@ -30,8 +30,5 @@ public class DHT_Map implements Serializable{
 	public String toString() {
 		//return "DHT_map [key=" + key + ", value=" + value + "]";
 		return "(" + key + " ," + value + ")";
-	}
-
-	
-	
+	}	
 }
