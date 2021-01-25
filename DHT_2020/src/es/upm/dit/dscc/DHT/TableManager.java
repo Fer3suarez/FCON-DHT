@@ -1,21 +1,16 @@
 package es.upm.dit.dscc.DHT;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
 
 public class TableManager {
 
 	private java.util.logging.Logger LOGGER = DHTMain.LOGGER;
-
 	private int       nReplica;
 	private int       nServersMax;
-	private String   localAddress;
-  
+	private String    localAddress;
 	private HashMap<Integer, String> DHTServers = new HashMap<Integer, String>();
 	private HashMap<Integer, DHTUserInterface> DHTTables = new HashMap<Integer, DHTUserInterface>();
 
-	
 	public TableManager(String localAddress,
 			int     nServersMax, 
 			int     nReplica) {
@@ -27,28 +22,22 @@ public class TableManager {
 
 	// TODO TRY TO MAKE THIS PRIVATE
 	public Integer getPos (String key) {
-
 		int hash =	key.hashCode();
 		if (hash < 0) {
 			LOGGER.finest("Hash value is negative!!!!!");
 			hash = -hash;
 		}
-
 		int segment = Integer.MAX_VALUE / (nServersMax); // No negatives
-
 		for(int i = 0; i < nServersMax; i++) {
 			if (hash >= (i * segment) && (hash <  (i+1)*segment)){
 				return i;
 			}
 		}
-
 		LOGGER.warning("getPos: This sentence shound not run");
 		return 1;
-
 	}
 
 	public Integer getPosicion (String address) {
-
 		int posAddress = 0;
 		for (int i = 0; i < DHTServers.size(); i++){
 			if (localAddress.equals(DHTServers.get(i))) {
@@ -56,9 +45,7 @@ public class TableManager {
 				continue;
 			}
 		}
-
 		return posAddress;
-
 	}
 
 	public int[] getNodes(String key) {
@@ -70,11 +57,8 @@ public class TableManager {
 		return nodes;
 	}
 
-
-
 	public void addDHT(DHTUserInterface dht, int pos) {
 		DHTTables.put(pos, dht);
-
 	}
 
 	public DHTUserInterface getDHT(String key) {
@@ -82,26 +66,21 @@ public class TableManager {
 	}
 
 	public boolean isDHTLocalReplica (String key, String address) { 
-		//int pos = getPos(key);
 		return address.equals(localAddress);
 	}
 
 	public boolean isDHTLocalReplica (int posReplica, String key) { 
-
 		int pos = getPos(key);
 		return posReplica == pos;
 	}
 
 	public boolean isDHTLocal (int pos) {
-
 		boolean isLocal = localAddress.equals(DHTServers.get(pos));
 		LOGGER.fine("Posición: " + pos + ", isDHTLocal: " + isLocal);
 		return isLocal;
 	}
 
-
 	public boolean isDHTLocal (String key) {
-
 		int pos = getPos(key);
 		boolean isLocal = localAddress.equals(DHTServers.get(pos));
 		LOGGER.fine("Posición: " + pos + ", isDHTLocal: " + isLocal);
@@ -112,7 +91,6 @@ public class TableManager {
 		//Address aux = DHTServers.get(pos);
 		return DHTServers.get(pos);
 	}
-
 
 	public String DHTAddress (String key) {
 		// NO REPLICATION!!!!
@@ -128,10 +106,8 @@ public class TableManager {
 		java.util.List<String> DHTReplicas = new java.util.ArrayList<String>();
 
 		int pos = getPos(key);
-
 		if (nReplica > 1) {
 			for (int i = 1; i < nReplica; i++) {
-				//TODO Si hay fallos podría ser nServersMax
 				int aux = (pos + i) % nServersMax; 
 				DHTReplicas.add(DHTServers.get(aux));
 				LOGGER.fine("Replica #" + aux);
@@ -144,10 +120,8 @@ public class TableManager {
 		return DHTServers;
 	}
 	
-
 	public String printDHTServers() {
 		String aux = "DHTManager: Servers => [";
-
 		for (int i = 0; i < nServersMax; i++) {
 			if (DHTServers.get(i) != null) {
 				aux = aux + DHTServers.get(i) + " ";
@@ -155,9 +129,7 @@ public class TableManager {
 				aux = aux + "null ";	
 			}	
 		}	
-
 		aux = aux + "]";
-
 		return aux;
 	}
 
@@ -166,7 +138,6 @@ public class TableManager {
 		DHTUserInterface dht;
 		String aux = "Size: " + DHTTables.size() + " Local server: " + getPosicion(localAddress) +"\n";
 		aux = aux + printDHTServers() + "\n";
-
 		for (int i = 0; i < nServersMax; i ++) {
 			dht = DHTTables.get(i);
 			if (dht == null) {
@@ -174,13 +145,8 @@ public class TableManager {
 			} else {
 				aux = aux + "Table " + i + ": " + dht.toString() + "\n";
 			}
-
 		}
-
 		return aux;
 	}
-
-
-
 }
 
