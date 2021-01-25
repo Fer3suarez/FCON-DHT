@@ -10,8 +10,6 @@ import java.io.Serializable;
 public class DHTHashMap implements DHTUserInterface, Serializable{
 	
 	private static final long serialVersionUID = 1L;
-	// LOGGER is not serilizable
-	//private java.util.logging.Logger LOGGER = DHTMain.LOGGER;
 	private HashMap <String, Integer> hashMap = new HashMap<String, Integer>();
 		
 	@Override
@@ -53,26 +51,7 @@ public class DHTHashMap implements DHTUserInterface, Serializable{
 			Integer integer = (Integer) iterator.next();
 			list.add(integer);
 		}
-
 		return list;
-		
-	}
-	//Se añade
-	public Integer getMsg(String key) {
-		//TODO
-		return null;
-	}
-	
-	@Override
-	public Integer putMsg(DHT_Map map) {
-		//TODO
-		return null;
-	}
-
-	@Override
-	public Integer removeMsg(String key) {
-		//TODO
-		return null;
 	}
 
 	public HashMap <String, Integer> getDHT() {
@@ -90,6 +69,4 @@ public class DHTHashMap implements DHTUserInterface, Serializable{
 		}
 		return aux;
 	}
-
-
 }
