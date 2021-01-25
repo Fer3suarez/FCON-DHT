@@ -18,6 +18,8 @@ public class zkMember{
 	private java.util.logging.Logger LOGGER = DHTMain.LOGGER;
 	private static String rootMembers = "/members";
 	private static String aMember = "/member-";
+	private static String pathTablas = "/tablesDHT";
+	private static String pathServers = "/serversDHT";
 	private String myId;
 	private String localAddress;
 	//Variables de ViewManager;
@@ -38,6 +40,7 @@ public class zkMember{
 	private ZooKeeper zk;
 	
 	public zkMember () {
+		this.nServers = 0;
 		// Select a random zookeeper server
 		Random rand = new Random();
 		int i = rand.nextInt(hosts.length);
