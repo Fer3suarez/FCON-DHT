@@ -17,8 +17,6 @@ public class OperationsDHT implements Serializable {
 	private int         posServer;
 	private DHTUserInterface dht      = null;
 	private HashMap<Integer, String> DHTServers;
-	// private Set<String> 
-	// private ArrayList<Integer>
 
 	// PUT_MAP
 	public OperationsDHT (OperationEnum operation,
@@ -136,10 +134,5 @@ public class OperationsDHT implements Serializable {
 	public HashMap<Integer, String> getDHTServers() {
 		return this.DHTServers;
 	}
-
-	// LIST_SERVERS
-	// Es posible que no sea necesario
-	
-	
 }
 
