@@ -1,16 +1,8 @@
 package es.upm.dit.dscc.DHT;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Scanner;
-import java.util.Set;
-
 import java.util.logging.ConsoleHandler;
-//import java.util.logging.Filter;
-//import java.util.logging.Handler;
 import java.util.logging.Level;
-//import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 
@@ -19,21 +11,13 @@ public class DHTMain {
 	static {
 		System.setProperty("java.util.logging.SimpleFormatter.format",
 				"[%1$tF %1$tT][%4$-7s] [%5$s] [%2$-7s] %n");
-
-		//    		"[%1$tF %1$tT] [%2$-7s] %3$s %n");
-		//           "[%1$tF %1$tT] [%4$-7s] %5$s %n");
-		//   "%4$s: %5$s [%1$tc]%n");
-		//    "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %2$s%n%4$s: %5$s%n");
 	}
 
 	static final Logger LOGGER = Logger.getLogger(DHTMain.class.getName());
 
 	public DHTMain() {
-		// TODO Auto-generated constructor stub
 		configureLogger();
 	}
-
-	//////////////////////////////////////////////////////////////////////////
 
 	public void configureLogger() {
 		ConsoleHandler handler;
@@ -43,10 +27,7 @@ public class DHTMain {
 		LOGGER.setLevel(Level.FINE);
 	}
 
-	//////////////////////////////////////////////////////////////////////////
-
 	public void initMembers(DHTUserInterface dht) {
-
 			dht.put(new DHT_Map("Angel", 1));
 			dht.put(new DHT_Map("Bernardo", 2));
 			dht.put(new DHT_Map("Carlos", 3));
@@ -55,10 +36,8 @@ public class DHTMain {
 			dht.put(new DHT_Map("Zamorano", 6));
 	}
 
-	//////////////////////////////////////////////////////////////////////////
 
 	public DHT_Map putMap(Scanner sc) {
-		//Añadir Zookeeper y quitar JGroups
 		String  key     = null;
 		Integer value   = 0;
 
@@ -78,19 +57,14 @@ public class DHTMain {
 		return new DHT_Map(key, value);
 	}
 
-	//////////////////////////////////////////////////////////////////////////
-
 	public static void main(String[] args) {
 
 		boolean correct = false;
 		int     menuKey = 0;
 		boolean exit    = false;
 		Scanner sc      = new Scanner(System.in);
-
 		String   key    = null;
 		Integer value   = 0;
-
-
 		DHTManager        dht        = new DHTManager();
 		DHTMain           mainDHT    = new DHTMain();
 
@@ -114,12 +88,11 @@ public class DHTMain {
 					System.out.println("No hay quorum. No es posible ejecutar su elección");
 					continue;
 				}*/
-				
+			
 				switch (menuKey) {
 				case 1: // Put
 					dht.put(mainDHT.putMap(sc));
 					break;
-
 				case 2: // Get
 					System. out .print(">>> Enter key (String) = ");
 					key    = sc.next();
@@ -134,7 +107,6 @@ public class DHTMain {
 				case 3: // Remove
 					System. out .print(">>> Enter key (String) = ");
 					key    = sc.next();
-					//if (dht.containsKey(key)) {
 					value  = dht.remove(key);
 					if (value != null) {
 						System.out.println(value);							
@@ -152,28 +124,17 @@ public class DHTMain {
 					}
 					break;
 				case 5:
-					//ArrayList<Integer> list = new ArrayList<Integer>();
 					System.out.println("List of values in the DHT:");
 					System.out.println(dht.toString());
 					break;
 				case 6:
-					//Set<String> set = new HashSet<String>();
-					//set = dht.keySet();
-					//for (Iterator iterator = set.iterator(); iterator.hasNext();) {
-					//	String string = (String) iterator.next();
-					//	Integer valueSet = dht.get(string);
-					//	System.out.print("["+ string + ", "  + valueSet+ "] ");
-					//}
 					System.out.println("The option is not available");
 					break;
-
 				case 7:
 					mainDHT.initMembers(dht);
 					break;
-
 				case 0:
 					exit = true;	
-					//dht.close();
 				default:
 					break;
 				}
@@ -182,9 +143,7 @@ public class DHTMain {
 				System.err.println(e);
 				e.printStackTrace();
 			}
-
 		}
-
 		sc.close();
 	}
 }
