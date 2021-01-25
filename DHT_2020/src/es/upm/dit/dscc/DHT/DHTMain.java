@@ -5,7 +5,6 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 public class DHTMain {
 
 	static {
@@ -40,10 +39,9 @@ public class DHTMain {
 	public DHT_Map putMap(Scanner sc) {
 		String  key     = null;
 		Integer value   = 0;
-
+		
 		System. out .print(">>> Enter name (String) = ");
 		key = sc.next();
-
 
 		System. out .print(">>> Enter account number (int) = ");
 		if (sc.hasNextInt()) {
@@ -58,7 +56,6 @@ public class DHTMain {
 	}
 
 	public static void main(String[] args) {
-
 		boolean correct = false;
 		int     menuKey = 0;
 		boolean exit    = false;
@@ -81,14 +78,11 @@ public class DHTMain {
 						sc.next();
 						System.out.println("The provised text provided is not an integer");
 					}
-					
 				}
-
 				/*if (!dht.isQuorum()) {
 					System.out.println("No hay quorum. No es posible ejecutar su elección");
 					continue;
 				}*/
-			
 				switch (menuKey) {
 				case 1: // Put
 					dht.put(mainDHT.putMap(sc));
@@ -102,7 +96,6 @@ public class DHTMain {
 					} else {
 						System.out.println("The key: " + key + " does not exist");
 					}
-
 					break;
 				case 3: // Remove
 					System. out .print(">>> Enter key (String) = ");
