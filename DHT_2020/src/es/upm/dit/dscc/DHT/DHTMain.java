@@ -35,14 +35,12 @@ public class DHTMain {
 			dht.put(new DHT_Map("Zamorano", 6));
 	}
 
-
 	public DHT_Map putMap(Scanner sc) {
 		String  key     = null;
 		Integer value   = 0;
 		
 		System. out .print(">>> Enter name (String) = ");
 		key = sc.next();
-
 		System. out .print(">>> Enter account number (int) = ");
 		if (sc.hasNextInt()) {
 			value = sc.nextInt();
@@ -51,7 +49,6 @@ public class DHTMain {
 			sc.next();
 			return null;
 		}
-
 		return new DHT_Map(key, value);
 	}
 
@@ -79,10 +76,10 @@ public class DHTMain {
 						System.out.println("The provised text provided is not an integer");
 					}
 				}
-				if (!dht.isQuorum()) {
-					System.out.println("No hay quorum. No es posible ejecutar su elección");
-					continue;
-				}
+//				if (!dht.isQuorum()) {
+//					System.out.println("No hay quorum. No es posible ejecutar su elección");
+//					continue;
+//				}
 				switch (menuKey) {
 				case 1: // Put
 					dht.put(mainDHT.putMap(sc));

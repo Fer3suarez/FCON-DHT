@@ -64,56 +64,9 @@ public class TableManager {
 	public DHTUserInterface getDHT(String key) {
 		return DHTTables.get(getPos(key));
 	}
-
-	public boolean isDHTLocalReplica (String key, String address) { 
-		return address.equals(localAddress);
-	}
-
-	public boolean isDHTLocalReplica (int posReplica, String key) { 
-		int pos = getPos(key);
-		return posReplica == pos;
-	}
-
-	public boolean isDHTLocal (int pos) {
-		boolean isLocal = localAddress.equals(DHTServers.get(pos));
-		LOGGER.fine("Posición: " + pos + ", isDHTLocal: " + isLocal);
-		return isLocal;
-	}
-
-	public boolean isDHTLocal (String key) {
-		int pos = getPos(key);
-		boolean isLocal = localAddress.equals(DHTServers.get(pos));
-		LOGGER.fine("Posición: " + pos + ", isDHTLocal: " + isLocal);
-		return isLocal;
-	}
-
-	public String DHTAddress (int pos) {
-		//Address aux = DHTServers.get(pos);
-		return DHTServers.get(pos);
-	}
-
-	public String DHTAddress (String key) {
-		// NO REPLICATION!!!!
-		int pos = getPos(key);
-		return DHTServers.get(pos);
-	}
 	
 	public HashMap<Integer, DHTUserInterface> getDHTTables() {
 		return DHTTables;
-	}
-
-	java.util.List<String> DHTReplicas (String key) {
-		java.util.List<String> DHTReplicas = new java.util.ArrayList<String>();
-
-		int pos = getPos(key);
-		if (nReplica > 1) {
-			for (int i = 1; i < nReplica; i++) {
-				int aux = (pos + i) % nServersMax; 
-				DHTReplicas.add(DHTServers.get(aux));
-				LOGGER.fine("Replica #" + aux);
-			}
-		}
-		return DHTReplicas;
 	}
 
 	HashMap<Integer, String> getDHTServers() {
@@ -157,4 +110,3 @@ public class TableManager {
 		return aux;
 	}
 }
-

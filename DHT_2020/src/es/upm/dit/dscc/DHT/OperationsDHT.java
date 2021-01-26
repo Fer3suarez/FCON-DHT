@@ -24,7 +24,6 @@ public class OperationsDHT implements Serializable {
 			boolean isReplica)           {
 		this.operation = operation;
 		this.map       = map;
-		this.isReplica = isReplica;
 	}
 
 	// GET_MAP REMOVE_MAP CONTAINS_KEY_MAP
