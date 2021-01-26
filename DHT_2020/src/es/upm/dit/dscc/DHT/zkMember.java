@@ -18,20 +18,22 @@ public class zkMember{
 	private java.util.logging.Logger LOGGER = DHTMain.LOGGER;
 	private static String rootMembers = "/members";
 	private static String aMember = "/member-";
-	private static String pathTablas = "/tablesDHT";
+	private static String pathTablas = "/tableDHT";
 	private static String pathServers = "/serversDHT";
 	private String myId;
 	private String localAddress;
 	//Variables de ViewManager;
-	private int       nReplica;
 	private int       nServersMax;
 	private int       nServers;
+	private int       nReplicas;
+	private int       mutex;
 	private List<String> previous    = null;
 	private boolean   isQuorum       = false;
 	private boolean   firstQuorum    = false;
 	private boolean   pendingReplica = false;
 	private String    failedServerTODO;
 	private TableManager tableManager;
+	private DHTUserInterface dht;
 	
 	
 	// This is static. A list of zookeeper can be provided for decide where to connect
@@ -39,8 +41,15 @@ public class zkMember{
 
 	private ZooKeeper zk;
 	
-	public zkMember () {
-		this.nServers = 0;
+	public zkMember(int nServersMax, int nReplicas, operationBlocking mutex, 
+			TableManager tableManager, DHTUserInterface dht) {
+		this.nServers     = 0;
+		this.nServersMax  = nServersMax;
+		this.nReplicas    = nReplicas;
+		this.mutex        = -1;
+		this.tableManager = tableManager;
+		this.dht          = dht;
+		
 		// Select a random zookeeper server
 		Random rand = new Random();
 		int i = rand.nextInt(hosts.length);
@@ -61,11 +70,11 @@ public class zkMember{
 		} catch (Exception e) {
 			System.out.println("Error");
 		}
-		// Add the process to the members in zookeeper
+		// Add the process to the members, servers and tables in zookeeper
 		if (zk != null) {
 			// Create a folder for members and include this process/server
 			try {
-				// Create a folder, if it is not created
+				// Create a members folder, if it is not created
 				String response = new String();
 				Stat s = zk.exists(rootMembers, false); //this);
 				if (s == null) {
@@ -74,12 +83,28 @@ public class zkMember{
 							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 					System.out.println(response);
 				}
-
+				// Create a servers and tables folder, if it is not created
+				Stat s1 = zk.exists(pathTablas+"/-1", false); //this);
+				Stat s2 = zk.exists(pathTablas+"/-2", false); //this);
+				Stat s3 = zk.exists(pathTablas+"/-3", false); //this);
+				Stat s4 = zk.exists(pathServers, false); //this);
+				if(s1 == null && s2 == null && s3 == null && s4 == null) {
+					zk.create(pathTablas+"-1", new byte[0], 
+							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					zk.create(pathTablas+"-2", new byte[0], 
+							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					zk.create(pathTablas+"-3", new byte[0], 
+							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					zk.create(pathServers, new byte[0], 
+							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					System.out.println("Nodos de tablas y servidores creados");
+				}
 				// Create a znode for registering as member and get my id
 				myId = zk.create(rootMembers + aMember, new byte[0], 
 						Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
-
 				myId = myId.replace(rootMembers + "/", "");
+				this.tableManager.setLocalAddress(myId);
+				this.localAddress = myId;
 
 				List<String> list = zk.getChildren(rootMembers, false, s); //this, s);
 				System.out.println("Created znode nember id:"+ myId );
