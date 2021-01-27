@@ -7,7 +7,6 @@ public class operationBlocking {
 	private OperationsDHT  operation;
 	
 	public operationBlocking() {
-		
 	}
 	
 	public synchronized OperationsDHT sendOperation() {
@@ -37,7 +36,6 @@ public class operationBlocking {
 			System.out.println("Invoke sendOperation while no waiting");
 			return;
 		}
-		
 		waiting = false;
 		this.operation = operation;
 		notifyAll();

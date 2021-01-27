@@ -67,7 +67,7 @@ public class DHTOperaciones implements DHTUserInterface {
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);
 		byte[] bytes = serialize(datosOperacion); //Serializar datos de la operacion
 		zkOperation op = new zkOperation(bytes);
-		
+		//operation = mutex.sendOperation();
 		return operation.getValue();
 	}
 
@@ -89,7 +89,7 @@ public class DHTOperaciones implements DHTUserInterface {
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);
 		byte[] bytes = serialize(datosOperacion); //Serializar datos de la operacion
 		zkOperation op = new zkOperation(bytes);
-		
+		//operation = mutex.sendOperation();
 		return operation.getValue();
 	}
 
@@ -111,7 +111,7 @@ public class DHTOperaciones implements DHTUserInterface {
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);
 		byte[] bytes = serialize(datosOperacion); //Serializar datos de la operacion
 		zkOperation op = new zkOperation(bytes);
-		
+		//operation = mutex.sendOperation();
 		return operation.getValue();
 	}
 
