@@ -24,7 +24,9 @@ public class zkMember{
 	private static String rootMembers = "/members";
 	private static String aMember = "/member-";
 	private static String pathTablas = "/tableDHT";
+	private static String pathOperaciones = "/Ops";
 	private String myId;
+	private String myOp;
 	private String localAddress;
 	//Variables de ViewManager;
 	private int       nServersMax;
@@ -85,7 +87,7 @@ public class zkMember{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		guardarServers();
+		actualizarServers();
 		System.out.println("Created znode nember id:"+ myId );
 		System.out.println("Created cluster ZK with: " + list.size() + " members");
 		printListMembers(list);
@@ -194,14 +196,106 @@ public class zkMember{
 					System.out.println("        Update!!");
 					List<String> list = zk.getChildren(rootMembers,  watcherMember); //this);
 					manageN(list);
-					guardarServers();
+					actualizarServers();
 					printListMembers(list);
-					System. out .println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
+					System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
 				} catch (Exception e) {
-					System.out.println("Exception: wacherMember");
+					System.out.println(e);
 				}
 			}
 		};
+		
+		private Watcher  watcherOperacion = new Watcher() {
+			public void process(WatchedEvent event) {
+				System.out.println("------------------Watcher Operacion------------------\n");		
+				try {
+					List<String> list = zk.getChildren(pathOperaciones,  watcherOperacion); //this);
+					if(list.size() > 0) {
+						printListMembers(list);
+						procesarOperacion();				
+					} else {
+						actualizarServers();
+						System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
+					}
+				} catch (Exception e) {
+					System.out.println(e);
+				}
+			}
+		};
+		
+//---------------------------------OPERACIONES-------------------------------------------------
+	public void configOp() {
+		if(zk != null) {
+			try {
+				Stat s = zk.exists(pathOperaciones, false);
+				if(s == null) {
+					myOp = zk.create(pathOperaciones, new byte[0], 
+							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					System.out.println("Nodo de operaciones creado");
+					myOp = myOp.replace(pathOperaciones + "/", "");
+				}
+				List<String> listOperaciones = zk.getChildren(pathOperaciones, watcherOperacion, s);
+				System.out.println("Operations: " + listOperaciones.size());
+				printListMembers(listOperaciones);
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+		}
+		
+	}
+		
+	public void procesarOperacion() {
+		List<String> list;
+		boolean operar = false;
+		try {
+			list = zk.getChildren(pathOperaciones, false);
+			int indice = list.indexOf(myOp.substring(myOp.lastIndexOf('/')+1));
+			if(indice == 0) {
+				System.out.println("Soy el lider");
+				Stat s = zk.exists(pathOperaciones, false);
+				byte[] bytes = zk.getData(pathOperaciones, false, s);
+				Operacion op = deserializeOp(bytes);
+				int[] nodos = op.getNodos();
+				for (int j = 0; j < nodos.length; j++) {
+					if(nodos[j] == tableManager.getPosicion(myId)) {
+						System.out.println("El servidor necesita procesar la operacion y dar una respuesta");
+						operar = true;
+					}
+				}
+				if(operar) { //Necesito devolver la operacion y la respuesta
+					OperationsDHT o = op.getOperacion();
+					int[] respuestas;
+					int respuesta;
+					switch ((OperationEnum) o.getOperation()) {
+					case GET_MAP:
+						respuesta = dht.get(o.getKey());
+						o.setValue(respuesta);
+						break;
+					case PUT_MAP:
+						respuesta = dht.put(o.getMap());
+						o.setValue(respuesta);
+						break;
+					default:
+						respuesta = dht.remove(o.getKey());
+						o.setValue(respuesta);
+						break;
+					}
+					respuestas = op.getRespuestas();
+					for (int i = 0; i < respuestas.length; i++) {
+						if(respuestas[i] == 0) {
+							respuestas[i] = respuesta;
+							break; //Metemos la respuesta y salimos
+						}
+					}
+					op.setRespuestas(respuestas);
+					op.setOperacion(o);
+				}
+			}
+		} catch (KeeperException | InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 //------------------ANTIGUO VIEWMANAGER (GESTION DE SERVERS)-----------------------------------	
 	
 	public HashMap<Integer, String>  addServer(String address) {
@@ -368,7 +462,7 @@ public class zkMember{
 		return tabla;
 	}
 	
-	public void guardarServers() {
+	public void actualizarServers() {
 		switch (tableManager.getPosicion(myId)) {
 		case 0:
 			actualizarTablas(pathTablas+"-0", tableManager.getDHTTables());
@@ -383,8 +477,9 @@ public class zkMember{
 	}
 		
 	public void actualizarTablas(String path, HashMap<Integer, DHTUserInterface> tabla){
-		byte[] bytes = serialize(tabla);
+		byte[] bytes = null;
 		try {
+			bytes = serialize(tabla);
 			Stat s = zk.exists(path, false);
 			zk.setData(path, bytes, s.getVersion());
 		} catch (KeeperException | InterruptedException e) {
@@ -416,6 +511,37 @@ public class zkMember{
 			is = new ObjectInputStream(bs);
 			HashMap<Integer, DHTUserInterface> tabla = (HashMap<Integer, DHTUserInterface>) is.readObject();
 			return tabla;
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static byte[] serializeOp(Operacion op) {
+		ByteArrayOutputStream bs = new ByteArrayOutputStream();
+		ObjectOutputStream os;
+		try {
+			os = new ObjectOutputStream(bs);
+			os.writeObject(op);
+			os.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		byte[] bytes = bs.toByteArray();
+		return bytes;
+	}
+	
+	public static Operacion deserializeOp(byte[] bytes) {
+		ByteArrayInputStream bs = new ByteArrayInputStream(bytes);
+		ObjectInputStream is;
+		try {
+			is = new ObjectInputStream(bs);
+			Operacion op = (Operacion) is.readObject();
+			return op;
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {

@@ -28,11 +28,11 @@ public class DHTMain {
 
 	public void initMembers(DHTUserInterface dht) {
 			dht.put(new DHT_Map("Angel", 1));
-			dht.put(new DHT_Map("Bernardo", 2));
-			dht.put(new DHT_Map("Carlos", 3));
-			dht.put(new DHT_Map("Daniel", 4));
-			dht.put(new DHT_Map("Eugenio", 5));
-			dht.put(new DHT_Map("Zamorano", 6));
+//			dht.put(new DHT_Map("Bernardo", 2));
+//			dht.put(new DHT_Map("Carlos", 3));
+//			dht.put(new DHT_Map("Daniel", 4));
+//			dht.put(new DHT_Map("Eugenio", 5));
+//			dht.put(new DHT_Map("Zamorano", 6));
 	}
 
 	public DHT_Map putMap(Scanner sc) {
