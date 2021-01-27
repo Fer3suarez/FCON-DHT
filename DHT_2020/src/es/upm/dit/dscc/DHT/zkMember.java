@@ -1,5 +1,10 @@
 package es.upm.dit.dscc.DHT;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -19,7 +24,6 @@ public class zkMember{
 	private static String rootMembers = "/members";
 	private static String aMember = "/member-";
 	private static String pathTablas = "/tableDHT";
-	private static String pathServers = "/serversDHT";
 	private String myId;
 	private String localAddress;
 	//Variables de ViewManager;
@@ -58,9 +62,39 @@ public class zkMember{
 		// When is created, the watcher is notified
 		createSessionZK(i);
 		confZK();
-		
 		// Add the process to the members, servers and tables in zookeeper
 		
+	}
+	
+	public static byte[] serialize(Operacion op) {
+		ByteArrayOutputStream bs = new ByteArrayOutputStream();
+		ObjectOutputStream os;
+		try {
+			os = new ObjectOutputStream(bs);
+			os.writeObject(op);
+			os.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		byte[] bytes = bs.toByteArray();
+		return bytes;
+	}
+	
+	public static Operacion deserialize(byte[] bytes) {
+		ByteArrayInputStream bs = new ByteArrayInputStream(bytes);
+		ObjectInputStream is;
+		try {
+			is = new ObjectInputStream(bs);
+			Operacion op = (Operacion) is.readObject();
+			return op;
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	public void createSessionZK(int i) {
@@ -94,20 +128,17 @@ public class zkMember{
 					System.out.println(response);
 				}
 				// Create a servers and tables folder, if it is not created
+				Stat s0 = zk.exists(pathTablas+"/-0", false); //this);
 				Stat s1 = zk.exists(pathTablas+"/-1", false); //this);
 				Stat s2 = zk.exists(pathTablas+"/-2", false); //this);
-				Stat s3 = zk.exists(pathTablas+"/-3", false); //this);
-				Stat s4 = zk.exists(pathServers, false); //this);
-				if(s1 == null && s2 == null && s3 == null && s4 == null) {
+				if(s0 == null && s1 == null && s2 == null) {
+					zk.create(pathTablas+"-0", new byte[0], 
+							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 					zk.create(pathTablas+"-1", new byte[0], 
 							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 					zk.create(pathTablas+"-2", new byte[0], 
 							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-					zk.create(pathTablas+"-3", new byte[0], 
-							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-					zk.create(pathServers, new byte[0], 
-							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-					System.out.println("Nodos de tablas y servidores creados");
+					System.out.println("Nodos de tablas creadas");
 				}
 				// Create a znode for registering as member and get my id
 				myId = zk.create(rootMembers + aMember, new byte[0], 
@@ -116,9 +147,11 @@ public class zkMember{
 				this.tableManager.setLocalAddress(myId);
 				this.localAddress = myId;
 				
-				List<String> list = zk.getChildren(rootMembers, false, s); //this, s);
+				List<String> list = zk.getChildren(rootMembers, watcherMember, s); //this, s);
 				manageN(list);
+				saveInfoInTables();
 				System.out.println("Created znode nember id:"+ myId );
+				System.out.println("Created cluster ZK with: " + list.size() + " members");
 				printListMembers(list);
 			} catch (KeeperException e) {
 				System.out.println("The session with Zookeeper failes. Closing");
@@ -234,15 +267,12 @@ public class zkMember{
 	}
 	
 	public boolean manageN(List<String> newN) {
-
 		String address = null;
 		// There are enough servers: nServers = nServersMax
 		if (newN.size() > nServersMax) return false;
-
-		// TODO: Handle if on servers fails before creating the first quorum
-		// TODO: Currently supports one failure. Check if there are more than 1 fail
-		//       Supposed that no server fails until there are quorum
-
+			// TODO: Handle if on servers fails before creating the first quorum
+			// TODO: Currently supports one failure. Check if there are more than 1 fail
+			//       Supposed that no server fails until there are quorum
 		if (previous != null && newN.size() < previous.size()) {
 			LOGGER.warning("A server has failed. There is no quorum!!!!!");
 			// A server has failed
@@ -254,9 +284,7 @@ public class zkMember{
 			previous       = newN;
 			return false;
 		}
-
 		if (newN.size() > nServers) {
-
 			if (nServers == 0 && newN.size()>0) {
 				for (Iterator<String> iterator = newN.iterator(); iterator.hasNext();) {
 
@@ -269,7 +297,6 @@ public class zkMember{
 						firstQuorum = true;
 					}
 				}
-
 			} else {
 				if (newN.size() > nServers) {
 					HashMap<Integer, String> DHTServers;
@@ -304,4 +331,53 @@ public class zkMember{
 		previous = newN;
 		return true;
 	}
+	
+	//En cada tabla van dos servidores
+	public void saveInfoInTables() {
+		if(nServers == nServersMax) {
+			HashMap<Integer, DHTUserInterface> DHTTables = tableManager.getDHTTables();
+			switch (tableManager.getPosicion(myId)) {
+			case 0:
+				DHTTables.put(0, obtenerTablas(pathTablas+"/-0").get(0));// Al servidor 0 le metemos la tabla 0
+				DHTTables.put(1, obtenerTablas(pathTablas+"/-1").get(1));// Al servidor 0 le metemos la tabla 1
+				break;
+			case 1:
+				DHTTables.put(1, obtenerTablas(pathTablas+"/-1").get(1));// Al servidor 1 le metemos la tabla 1
+				DHTTables.put(2, obtenerTablas(pathTablas+"/-2").get(2));// Al servidor 1 le metemos la tabla 2
+				break;
+			default:
+				DHTTables.put(2, obtenerTablas(pathTablas+"/-2").get(2));// Al servidor 2 le metemos la tabla 2
+				DHTTables.put(0, obtenerTablas(pathTablas+"/-0").get(0));// Al servidor 2 le metemos la tabla 0
+				break;
+			}
+		}
+	}
+	
+	public HashMap<Integer, DHTUserInterface> obtenerTablas(String path){
+		HashMap<Integer, DHTUserInterface> tabla = new HashMap<Integer, DHTUserInterface>();
+		Stat s;
+		byte[] bytes = null;
+		try {
+			s = zk.exists(pathTablas+"-1", false);
+			bytes = zk.getData(pathTablas+"-1", false, s);
+		} catch (KeeperException | InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		//tabla = deserialize(bytes); //Error de cast -> hacer la serialización manual
+		if(bytes != null) {
+			ByteArrayInputStream bs = new ByteArrayInputStream(bytes);
+			ObjectInputStream is;
+			try {
+				is = new ObjectInputStream(bs);
+				tabla = (HashMap<Integer, DHTUserInterface>) is.readObject();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+		return tabla;
+	}
 }
+
