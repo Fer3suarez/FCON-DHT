@@ -76,10 +76,10 @@ public class DHTMain {
 						System.out.println("The provised text provided is not an integer");
 					}
 				}
-//				if (!dht.isQuorum()) {
-//					System.out.println("No hay quorum. No es posible ejecutar su elección");
-//					continue;
-//				}
+				if (!dht.isQuorum()) {
+					System.out.println("No hay quorum. No es posible ejecutar su elección");
+					continue;
+				}
 				switch (menuKey) {
 				case 1: // Put
 					dht.put(mainDHT.putMap(sc));

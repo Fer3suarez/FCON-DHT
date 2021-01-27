@@ -56,6 +56,14 @@ public class zkMember{
 
 		// Create a session and wait until it is created.
 		// When is created, the watcher is notified
+		createSessionZK(i);
+		confZK();
+		
+		// Add the process to the members, servers and tables in zookeeper
+		
+	}
+	
+	public void createSessionZK(int i) {
 		try {
 			if (zk == null) {
 				zk = new ZooKeeper(hosts[i], SESSION_TIMEOUT, cWatcher);
@@ -70,7 +78,9 @@ public class zkMember{
 		} catch (Exception e) {
 			System.out.println("Error");
 		}
-		// Add the process to the members, servers and tables in zookeeper
+	}
+	
+	public void confZK() {
 		if (zk != null) {
 			// Create a folder for members and include this process/server
 			try {
@@ -105,11 +115,11 @@ public class zkMember{
 				myId = myId.replace(rootMembers + "/", "");
 				this.tableManager.setLocalAddress(myId);
 				this.localAddress = myId;
-
+				
 				List<String> list = zk.getChildren(rootMembers, false, s); //this, s);
+				manageN(list);
 				System.out.println("Created znode nember id:"+ myId );
 				printListMembers(list);
-				//esLider(1);
 			} catch (KeeperException e) {
 				System.out.println("The session with Zookeeper failes. Closing");
 				return;
@@ -223,72 +233,75 @@ public class zkMember{
 		return isQuorum;
 	}
 	
-//	public boolean manageNodes(List<String> newN) {
-//		String address = null;
-//		// There are enough servers: nServers = nServersMax
-//		if (newN.size() > nServersMax) return false;
-//		// TODO: Handle if on servers fails before creating the first quorum
-//		// TODO: Currently supports one failure. Check if there are more than 1 fail
-//		//       Supposed that no server fails until there are quorum
-//		if (previous!= null && newN.size() < previous.size()) {
-//			LOGGER.warning("A server has failed. There is no quorum!!!!!");
-//			// A server has failed
-//			String failedServer = crashedServer(previous, newN);
-//			deleteServer(failedServer);
-//			nServers--;
-//			isQuorum       = false;
-//			pendingReplica = true;
-//			previous   = newN;
-//			return false;
-//		}
-//		if (newN.size() > nServers) {
-//			if (nServers == 0 && newN.size()>0) {
-//				for (Iterator<String> iterator = newN.iterator(); iterator.hasNext();) {
-//					String itAddress = (String) iterator.next();
-//					addServer(itAddress);
-//					LOGGER.fine("Added a server. NServers: " + nServers +  
-//							"Server: " + itAddress + ".");
-//					if (!itAddress.equals(localAddress)) {
-//						sendMessages.sendInit(itAddress);
-//					}
-//					if (nServers == nServersMax) {
-//						isQuorum    = true;
-//						firstQuorum = true;
-//					}
-//				}
-//			} else {
-//				if (newN.size() > nServers) {
-//					HashMap<Integer, String> DHTServers;
-//					address = newN.get(newN.size() - 1);
-//					addServer(address);
-//					LOGGER.fine("Added a server. NServers: " + nServers 
-//							+ ". Server: " + address);
-//					if (nServers == nServersMax) {
-//						isQuorum    = true;
-//						// A server crashed and is a new one
-//						if (firstQuorum) {
-//							// A previous quorum existed. Then tolerate the fail
-//							// Add the new one in the DHTServer							
-//							String failedServer = newServer(newN);
-//							failedServerTODO     = failedServer;
-//							// Add the server in DHTServer
-//							DHTServers = addServer(failedServer);
-//							if (DHTServers == null) {
-//								LOGGER.warning("DHTServers is null!!");
-//							} else {
-//								sendMessages.sendServers(failedServer, DHTServers);
-//							}
-//
-//							pendingReplica = true;
-//						} else {
-//							firstQuorum = true;
-//						}
-//					}
-//				}
-//			}
-//		}
-//		LOGGER.fine(tableManager.printDHTServers());
-//		previous = newN;
-//		return true;
-//	}
+	public boolean manageN(List<String> newN) {
+
+		String address = null;
+		// There are enough servers: nServers = nServersMax
+		if (newN.size() > nServersMax) return false;
+
+		// TODO: Handle if on servers fails before creating the first quorum
+		// TODO: Currently supports one failure. Check if there are more than 1 fail
+		//       Supposed that no server fails until there are quorum
+
+		if (previous != null && newN.size() < previous.size()) {
+			LOGGER.warning("A server has failed. There is no quorum!!!!!");
+			// A server has failed
+			String failedServer = crashedServer(previous, newN);
+			deleteServer(failedServer);
+			nServers--;
+			isQuorum       = false;
+			pendingReplica = true;
+			previous       = newN;
+			return false;
+		}
+
+		if (newN.size() > nServers) {
+
+			if (nServers == 0 && newN.size()>0) {
+				for (Iterator<String> iterator = newN.iterator(); iterator.hasNext();) {
+
+					String itAddress = (String) iterator.next();
+					addServer(itAddress);
+					LOGGER.fine("Added a server. NServers: " + nServers +  
+							"Server: " + itAddress + ".");
+					if (nServers == nServersMax) {
+						isQuorum    = true;
+						firstQuorum = true;
+					}
+				}
+
+			} else {
+				if (newN.size() > nServers) {
+					HashMap<Integer, String> DHTServers;
+					address = newN.get(newN.size() - 1);
+					addServer(address);
+					LOGGER.fine("Added a server. NServers: " + nServers 
+							+ ". Server: " + address);
+					if (nServers == nServersMax) {
+						isQuorum    = true;
+						// A server crashed and is a new one
+						if (firstQuorum) {
+							// A previous quorum existed. Then tolerate the fail
+							// Add the new one in the DHTServer							
+							String failedServer = newServer(newN);
+							failedServerTODO     = failedServer;
+							// Add the server in DHTServer
+							DHTServers = addServer(failedServer);
+							if (DHTServers == null) {
+								LOGGER.warning("DHTServers is null!!");
+							}
+							// Send the Replicas 
+							//transferData(failedServer);
+							pendingReplica = true;
+						} else {
+							firstQuorum = true;
+						}
+					}
+				}
+			}
+		}
+		LOGGER.fine(tableManager.printDHTServers());
+		previous = newN;
+		return true;
+	}
 }
