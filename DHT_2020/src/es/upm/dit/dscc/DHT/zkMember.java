@@ -61,40 +61,36 @@ public class zkMember{
 		// Create a session and wait until it is created.
 		// When is created, the watcher is notified
 		createSessionZK(i);
-		confZK();
-		// Add the process to the members, servers and tables in zookeeper
-		
-	}
-	
-	public static byte[] serialize(Operacion op) {
+		List<String> list = null;
+		list = confZK(list);
+		manageN(list);
+		guardarInfoInTables();
 		ByteArrayOutputStream bs = new ByteArrayOutputStream();
 		ObjectOutputStream os;
+		byte[] bytes= null;
 		try {
 			os = new ObjectOutputStream(bs);
-			os.writeObject(op);
+			os.writeObject(tableManager.getDHTServers());
 			os.close();
+			bytes = bs.toByteArray();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		byte[] bytes = bs.toByteArray();
-		return bytes;
-	}
-	
-	public static Operacion deserialize(byte[] bytes) {
-		ByteArrayInputStream bs = new ByteArrayInputStream(bytes);
-		ObjectInputStream is;
+		Stat s = null;
 		try {
-			is = new ObjectInputStream(bs);
-			Operacion op = (Operacion) is.readObject();
-			return op;
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
+			s = zk.exists(rootMembers, false);
+			zk.setData(rootMembers, bytes, s.getVersion());
+		} catch (KeeperException | InterruptedException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return null;
+		guardarServers();
+		System.out.println("Created znode nember id:"+ myId );
+		System.out.println("Created cluster ZK with: " + list.size() + " members");
+		printListMembers(list);
+		// Add the process to the members, servers and tables in zookeeper
+		
 	}
 	
 	public void createSessionZK(int i) {
@@ -114,7 +110,7 @@ public class zkMember{
 		}
 	}
 	
-	public void confZK() {
+	public List<String> confZK(List<String> list) {
 		if (zk != null) {
 			// Create a folder for members and include this process/server
 			try {
@@ -127,10 +123,10 @@ public class zkMember{
 							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 					System.out.println(response);
 				}
-				// Create a servers and tables folder, if it is not created
-				Stat s0 = zk.exists(pathTablas+"/-0", false); //this);
-				Stat s1 = zk.exists(pathTablas+"/-1", false); //this);
-				Stat s2 = zk.exists(pathTablas+"/-2", false); //this);
+				// Create a tables folder, if it is not created
+				Stat s0 = zk.exists(pathTablas+"-0", false); //this);
+				Stat s1 = zk.exists(pathTablas+"-1", false); //this);
+				Stat s2 = zk.exists(pathTablas+"-2", false); //this);
 				if(s0 == null && s1 == null && s2 == null) {
 					zk.create(pathTablas+"-0", new byte[0], 
 							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -144,22 +140,18 @@ public class zkMember{
 				myId = zk.create(rootMembers + aMember, new byte[0], 
 						Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
 				myId = myId.replace(rootMembers + "/", "");
+				list = zk.getChildren(rootMembers, watcherMember, s); //this, s);
 				this.tableManager.setLocalAddress(myId);
 				this.localAddress = myId;
-				
-				List<String> list = zk.getChildren(rootMembers, watcherMember, s); //this, s);
-				manageN(list);
-				saveInfoInTables();
-				System.out.println("Created znode nember id:"+ myId );
-				System.out.println("Created cluster ZK with: " + list.size() + " members");
-				printListMembers(list);
+				return list;
 			} catch (KeeperException e) {
 				System.out.println("The session with Zookeeper failes. Closing");
-				return;
+				return list;
 			} catch (InterruptedException e) {
 				System.out.println("InterruptedException raised");
 			}
 		}
+		return list;
 	}
 	
 	public String getLocalAddress() {
@@ -201,7 +193,10 @@ public class zkMember{
 				try {
 					System.out.println("        Update!!");
 					List<String> list = zk.getChildren(rootMembers,  watcherMember); //this);
+					manageN(list);
+					guardarServers();
 					printListMembers(list);
+					System. out .println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
 				} catch (Exception e) {
 					System.out.println("Exception: wacherMember");
 				}
@@ -283,72 +278,77 @@ public class zkMember{
 			pendingReplica = true;
 			previous       = newN;
 			return false;
-		}
-		if (newN.size() > nServers) {
-			if (nServers == 0 && newN.size()>0) {
-				for (Iterator<String> iterator = newN.iterator(); iterator.hasNext();) {
-
-					String itAddress = (String) iterator.next();
-					addServer(itAddress);
-					LOGGER.fine("Added a server. NServers: " + nServers +  
-							"Server: " + itAddress + ".");
-					if (nServers == nServersMax) {
-						isQuorum    = true;
-						firstQuorum = true;
-					}
-				}
-			} else {
-				if (newN.size() > nServers) {
-					HashMap<Integer, String> DHTServers;
-					address = newN.get(newN.size() - 1);
-					addServer(address);
-					LOGGER.fine("Added a server. NServers: " + nServers 
-							+ ". Server: " + address);
-					if (nServers == nServersMax) {
-						isQuorum    = true;
-						// A server crashed and is a new one
-						if (firstQuorum) {
-							// A previous quorum existed. Then tolerate the fail
-							// Add the new one in the DHTServer							
-							String failedServer = newServer(newN);
-							failedServerTODO     = failedServer;
-							// Add the server in DHTServer
-							DHTServers = addServer(failedServer);
-							if (DHTServers == null) {
-								LOGGER.warning("DHTServers is null!!");
-							}
-							// Send the Replicas 
-							//transferData(failedServer);
-							pendingReplica = true;
-						} else {
+		} else {
+			if (newN.size() > nServers) {
+				if (nServers == 0 && newN.size()>0) {
+					for (Iterator<String> iterator = newN.iterator(); iterator.hasNext();) {
+						String itAddress = (String) iterator.next();
+						addServer(itAddress);
+						LOGGER.fine("Added a server. NServers: " + nServers +  
+								"Server: " + itAddress + ".");
+						if (nServers == nServersMax) {
+							isQuorum    = true;
 							firstQuorum = true;
 						}
 					}
+				} else {
+						HashMap<Integer, String> DHTServers;
+						address = newN.get(newN.size() - 1);
+						addServer(address);
+						LOGGER.fine("Added a server. NServers: " + nServers 
+								+ ". Server: " + address);
+						if (nServers == nServersMax) {
+							isQuorum    = true;
+							// A server crashed and is a new one
+							if (firstQuorum) {
+								// A previous quorum existed. Then tolerate the fail
+								// Add the new one in the DHTServer							
+								String failedServer = newServer(newN);
+								failedServerTODO     = failedServer;
+								// Add the server in DHTServer
+								DHTServers = addServer(failedServer);
+								if (DHTServers == null) {
+									LOGGER.warning("DHTServers is null!!");
+								}
+								// Send the Replicas 
+								//transferData(failedServer);
+								pendingReplica = true;
+							} else {
+								firstQuorum = true;
+							}
+						}
 				}
 			}
-		}
-		LOGGER.fine(tableManager.printDHTServers());
-		previous = newN;
-		return true;
+			LOGGER.fine(tableManager.printDHTServers());
+			previous = newN;
+			return true;
+			}
 	}
 	
 	//En cada tabla van dos servidores
-	public void saveInfoInTables() {
+	public void guardarInfoInTables() {
 		if(nServers == nServersMax) {
 			HashMap<Integer, DHTUserInterface> DHTTables = tableManager.getDHTTables();
-			switch (tableManager.getPosicion(myId)) {
-			case 0:
-				DHTTables.put(0, obtenerTablas(pathTablas+"/-0").get(0));// Al servidor 0 le metemos la tabla 0
-				DHTTables.put(1, obtenerTablas(pathTablas+"/-1").get(1));// Al servidor 0 le metemos la tabla 1
-				break;
-			case 1:
-				DHTTables.put(1, obtenerTablas(pathTablas+"/-1").get(1));// Al servidor 1 le metemos la tabla 1
-				DHTTables.put(2, obtenerTablas(pathTablas+"/-2").get(2));// Al servidor 1 le metemos la tabla 2
-				break;
-			default:
-				DHTTables.put(2, obtenerTablas(pathTablas+"/-2").get(2));// Al servidor 2 le metemos la tabla 2
-				DHTTables.put(0, obtenerTablas(pathTablas+"/-0").get(0));// Al servidor 2 le metemos la tabla 0
-				break;
+			HashMap<Integer, DHTUserInterface> tabla0 = obtenerTablas(pathTablas+"-0");
+			HashMap<Integer, DHTUserInterface> tabla1 = obtenerTablas(pathTablas+"-1");
+			HashMap<Integer, DHTUserInterface> tabla2 = obtenerTablas(pathTablas+"-2");
+			if(tabla2 == null) {
+				tabla2 = new HashMap<Integer, DHTUserInterface>();
+			} else {
+				switch (tableManager.getPosicion(myId)) {
+				case 0:
+					DHTTables.put(0, tabla0.get(0));// Al servidor 0 le metemos la tabla 0
+					DHTTables.put(1, tabla1.get(1));// Al servidor 0 le metemos la tabla 1
+					break;
+				case 1:
+					DHTTables.put(1, tabla1.get(1));// Al servidor 1 le metemos la tabla 1
+					DHTTables.put(2, tabla2.get(2));// Al servidor 1 le metemos la tabla 2
+					break;
+				default:
+					DHTTables.put(2, tabla2.get(2));// Al servidor 2 le metemos la tabla 2
+					DHTTables.put(0, tabla0.get(0));// Al servidor 2 le metemos la tabla 0
+					break;
+				}
 			}
 		}
 	}
@@ -364,20 +364,64 @@ public class zkMember{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//tabla = deserialize(bytes); //Error de cast -> hacer la serialización manual
-		if(bytes != null) {
-			ByteArrayInputStream bs = new ByteArrayInputStream(bytes);
-			ObjectInputStream is;
-			try {
-				is = new ObjectInputStream(bs);
-				tabla = (HashMap<Integer, DHTUserInterface>) is.readObject();
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			}
-		}
+		tabla = deserialize(bytes);
 		return tabla;
+	}
+	
+	public void guardarServers() {
+		switch (tableManager.getPosicion(myId)) {
+		case 0:
+			actualizarTablas(pathTablas+"-0", tableManager.getDHTTables());
+			break;
+		case 1:
+			actualizarTablas(pathTablas+"-1", tableManager.getDHTTables());
+			break;
+		default:
+			actualizarTablas(pathTablas+"-2", tableManager.getDHTTables());
+			break;
+		}
+	}
+		
+	public void actualizarTablas(String path, HashMap<Integer, DHTUserInterface> tabla){
+		byte[] bytes = serialize(tabla);
+		try {
+			Stat s = zk.exists(path, false);
+			zk.setData(path, bytes, s.getVersion());
+		} catch (KeeperException | InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public static byte[] serialize(HashMap<Integer, DHTUserInterface> tabla) {
+		ByteArrayOutputStream bs = new ByteArrayOutputStream();
+		ObjectOutputStream os;
+		try {
+			os = new ObjectOutputStream(bs);
+			os.writeObject(tabla);
+			os.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		byte[] bytes = bs.toByteArray();
+		return bytes;
+	}
+	
+	public static HashMap<Integer, DHTUserInterface> deserialize(byte[] bytes) {
+		ByteArrayInputStream bs = new ByteArrayInputStream(bytes);
+		ObjectInputStream is;
+		try {
+			is = new ObjectInputStream(bs);
+			HashMap<Integer, DHTUserInterface> tabla = (HashMap<Integer, DHTUserInterface>) is.readObject();
+			return tabla;
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
 
