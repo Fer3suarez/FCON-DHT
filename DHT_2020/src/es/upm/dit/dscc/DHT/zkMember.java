@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -66,7 +67,7 @@ public class zkMember{
 		List<String> list = null;
 		list = confZK(list);
 		manageServers(list);
-		guardarInfoInTables();
+		guardarInfoEnTablas();
 		actualizarServers();
 		confOperaciones();
 		ByteArrayOutputStream bs = new ByteArrayOutputStream();
@@ -143,6 +144,7 @@ public class zkMember{
 						Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
 				myId = myId.replace(rootMembers + "/", "");
 				list = zk.getChildren(rootMembers, watcherMember, s); //this, s);
+				Collections.sort(list);
 				this.tableManager.setLocalAddress(myId);
 				this.localAddress = myId;
 				return list;
@@ -237,6 +239,11 @@ public class zkMember{
 					System.out.println("Nodo de operaciones creado");
 					myOp = myOp.replace(pathOperaciones + "/", "");
 				}
+//				myOp = zk.create(pathOperaciones+"/op-", new byte[0], 
+//						Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+				myOp = zkOperation.getOpPath();
+				Stat s2 = zk.exists(myOp, false);
+				zk.getData(myOp, watcherOperacion, s2);
 				s = zk.exists(pathOperaciones, false);
 				List<String> listOperaciones = zk.getChildren(pathOperaciones, watcherOperacion, s);
 				System.out.println("Operations: " + listOperaciones.size());
@@ -368,6 +375,7 @@ public class zkMember{
 		if (previousServer != null && newServer.size() < previousServer.size()) {
 			LOGGER.warning("A server has failed. There is no quorum!!!!!");
 			// A server has failed
+			Collections.sort(newServer);
 			String failedServer = crashedServer(previousServer, newServer);
 			deleteServer(failedServer);
 			nServers--;
@@ -392,6 +400,7 @@ public class zkMember{
 					}
 				} else {
 						HashMap<Integer, String> DHTServers;
+						Collections.sort(newServer);//Ordenar para la actualización
 						address = newServer.get(newServer.size() - 1);
 						addServer(address);
 						LOGGER.fine("Added a server. NServers: " + nServers 
@@ -425,7 +434,7 @@ public class zkMember{
 	}
 	
 	//En cada tabla van dos servidores
-	public void guardarInfoInTables() {
+	public void guardarInfoEnTablas() {
 		if(nServers == nServersMax) {
 			HashMap<Integer, DHTUserInterface> DHTTables = tableManager.getDHTTables();
 			HashMap<Integer, DHTUserInterface> tabla0 = obtenerTablas(pathTablas+"-0");

@@ -23,7 +23,7 @@ public class zkOperation {
 	private java.util.logging.Logger LOGGER = DHTMain.LOGGER;
 	private static String rootOp = "/Ops";
 	private static String aOp = "/op-";
-	private String myOp;
+	private static String myOp;
 	private operationBlocking mutex;
 	// This is static. A list of zookeeper can be provided for decide where to connect
 	String[] hosts = {"127.0.0.1:2181", "127.0.0.1:2181", "127.0.0.1:2181"};
@@ -80,6 +80,10 @@ public class zkOperation {
 				System.out.println("InterruptedException raised");
 			}
 		}
+	}
+	
+	public static String getOpPath() {
+		return myOp;
 	}
 	
 	public void process(WatchedEvent event) {
