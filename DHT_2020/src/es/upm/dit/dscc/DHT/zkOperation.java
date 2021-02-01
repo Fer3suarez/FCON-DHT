@@ -100,13 +100,14 @@ public class zkOperation {
 	}
 	
 	private void comprobarRespuestas(Operacion op, Stat s) {
-		boolean opOk = false;
+		boolean opOk = true;
 		int[] respuestas = op.getRespuestas();
-		if(respuestas[0] != 0 && respuestas[1] != 0) opOk = true;
+		if(respuestas[0] == 0 || respuestas[1] == 0) opOk = false;
 		if(opOk) {
 			System.out.println("Se han recibido las dos respuestas y se puede borrar la operacion");
 			//mutex.receiveOperation(op.getOperacion());
 			try {
+				s = zk.exists(myOp, false);
 				zk.delete(myOp, s.getVersion());
 			} catch (InterruptedException | KeeperException e) {
 				// TODO Auto-generated catch block

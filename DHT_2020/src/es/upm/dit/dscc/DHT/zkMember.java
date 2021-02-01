@@ -33,7 +33,7 @@ public class zkMember{
 	private int       nServers;
 	private int       nReplicas;
 	private int       mutex;
-	private List<String> previous    = null;
+	private List<String> previousServer    = null;
 	private boolean   isQuorum       = false;
 	private boolean   firstQuorum    = false;
 	private boolean   pendingReplica = false;
@@ -65,8 +65,10 @@ public class zkMember{
 		createSessionZK(i);
 		List<String> list = null;
 		list = confZK(list);
-		manageN(list);
+		manageServers(list);
 		guardarInfoInTables();
+		actualizarServers();
+		confOperaciones();
 		ByteArrayOutputStream bs = new ByteArrayOutputStream();
 		ObjectOutputStream os;
 		byte[] bytes= null;
@@ -87,7 +89,6 @@ public class zkMember{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		actualizarServers();
 		System.out.println("Created znode nember id:"+ myId );
 		System.out.println("Created cluster ZK with: " + list.size() + " members");
 		printListMembers(list);
@@ -117,13 +118,12 @@ public class zkMember{
 			// Create a folder for members and include this process/server
 			try {
 				// Create a members folder, if it is not created
-				String response = new String();
 				Stat s = zk.exists(rootMembers, false); //this);
 				if (s == null) {
 					// Created the znode, if it is not created.
-					response = zk.create(rootMembers, new byte[0], 
+					zk.create(rootMembers, new byte[0], 
 							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-					System.out.println(response);
+					System.out.println("Nodo de miembros creado");
 				}
 				// Create a tables folder, if it is not created
 				Stat s0 = zk.exists(pathTablas+"-0", false); //this);
@@ -177,8 +177,9 @@ public class zkMember{
 		System.out.println();
 	}
 	
-	
-//-----------------------------------WATCHERS--------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------WATCHERS----------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------
 		
 		// Notified when the session is created
 		private Watcher cWatcher = new Watcher() {
@@ -195,7 +196,7 @@ public class zkMember{
 				try {
 					System.out.println("        Update!!");
 					List<String> list = zk.getChildren(rootMembers,  watcherMember); //this);
-					manageN(list);
+					manageServers(list);
 					actualizarServers();
 					printListMembers(list);
 					System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
@@ -223,8 +224,10 @@ public class zkMember{
 			}
 		};
 		
-//---------------------------------OPERACIONES-------------------------------------------------
-	public void configOp() {
+//-----------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------OPERACIONES------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------
+	public void confOperaciones() {
 		if(zk != null) {
 			try {
 				Stat s = zk.exists(pathOperaciones, false);
@@ -234,6 +237,7 @@ public class zkMember{
 					System.out.println("Nodo de operaciones creado");
 					myOp = myOp.replace(pathOperaciones + "/", "");
 				}
+				s = zk.exists(pathOperaciones, false);
 				List<String> listOperaciones = zk.getChildren(pathOperaciones, watcherOperacion, s);
 				System.out.println("Operations: " + listOperaciones.size());
 				printListMembers(listOperaciones);
@@ -241,7 +245,6 @@ public class zkMember{
 				// TODO: handle exception
 			}
 		}
-		
 	}
 		
 	public void procesarOperacion() {
@@ -296,7 +299,9 @@ public class zkMember{
 			e.printStackTrace();
 		}
 	}
-//------------------ANTIGUO VIEWMANAGER (GESTION DE SERVERS)-----------------------------------	
+//-----------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------ANTIGUO VIEWMANAGER (GESTION DE SERVERS)-------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------
 	
 	public HashMap<Integer, String>  addServer(String address) {
 		HashMap<Integer, String> DHTServers = tableManager.getDHTServers();
@@ -336,15 +341,15 @@ public class zkMember{
 		return null;
 	}
 	
-	public String crashedServer(List<String> previousN, List<String> newN) {
-		for (int k = 0; k < newN.size(); k++) {
-			if (previousN.get(k).
-					equals(newN.get(k))) {
+	public String crashedServer(List<String> previousServerN, List<String> newServer) {
+		for (int k = 0; k < newServer.size(); k++) {
+			if (previousServerN.get(k).
+					equals(newServer.get(k))) {
 			} else {
-				return previousN.get(k);
+				return previousServerN.get(k);
 			}
 		}
-		return previousN.get(previousN.size() - 1);
+		return previousServerN.get(previousServerN.size() - 1);
 	}
 
 	public String newServer(List<String> n) {
@@ -355,27 +360,27 @@ public class zkMember{
 		return isQuorum;
 	}
 	
-	public boolean manageN(List<String> newN) {
+	public boolean manageServers(List<String> newServer) {
 		String address = null;
-		// There are enough servers: nServers = nServersMax
-		if (newN.size() > nServersMax) return false;
 			// TODO: Handle if on servers fails before creating the first quorum
 			// TODO: Currently supports one failure. Check if there are more than 1 fail
 			//       Supposed that no server fails until there are quorum
-		if (previous != null && newN.size() < previous.size()) {
+		if (previousServer != null && newServer.size() < previousServer.size()) {
 			LOGGER.warning("A server has failed. There is no quorum!!!!!");
 			// A server has failed
-			String failedServer = crashedServer(previous, newN);
+			String failedServer = crashedServer(previousServer, newServer);
 			deleteServer(failedServer);
 			nServers--;
 			isQuorum       = false;
 			pendingReplica = true;
-			previous       = newN;
+			previousServer       = newServer;
 			return false;
 		} else {
-			if (newN.size() > nServers) {
-				if (nServers == 0 && newN.size()>0) {
-					for (Iterator<String> iterator = newN.iterator(); iterator.hasNext();) {
+			// There are enough servers: nServers = nServersMax
+			if (newServer.size() > nServersMax) return false;
+			if (newServer.size() > nServers) {
+				if (nServers == 0 && newServer.size()>0) {
+					for (Iterator<String> iterator = newServer.iterator(); iterator.hasNext();) {
 						String itAddress = (String) iterator.next();
 						addServer(itAddress);
 						LOGGER.fine("Added a server. NServers: " + nServers +  
@@ -387,7 +392,7 @@ public class zkMember{
 					}
 				} else {
 						HashMap<Integer, String> DHTServers;
-						address = newN.get(newN.size() - 1);
+						address = newServer.get(newServer.size() - 1);
 						addServer(address);
 						LOGGER.fine("Added a server. NServers: " + nServers 
 								+ ". Server: " + address);
@@ -395,9 +400,9 @@ public class zkMember{
 							isQuorum    = true;
 							// A server crashed and is a new one
 							if (firstQuorum) {
-								// A previous quorum existed. Then tolerate the fail
+								// A previousServer quorum existed. Then tolerate the fail
 								// Add the new one in the DHTServer							
-								String failedServer = newServer(newN);
+								String failedServer = newServer(newServer);
 								failedServerTODO     = failedServer;
 								// Add the server in DHTServer
 								DHTServers = addServer(failedServer);
@@ -414,7 +419,7 @@ public class zkMember{
 				}
 			}
 			LOGGER.fine(tableManager.printDHTServers());
-			previous = newN;
+			previousServer = newServer;
 			return true;
 			}
 	}
@@ -426,23 +431,19 @@ public class zkMember{
 			HashMap<Integer, DHTUserInterface> tabla0 = obtenerTablas(pathTablas+"-0");
 			HashMap<Integer, DHTUserInterface> tabla1 = obtenerTablas(pathTablas+"-1");
 			HashMap<Integer, DHTUserInterface> tabla2 = obtenerTablas(pathTablas+"-2");
-			if(tabla2 == null) {
-				tabla2 = new HashMap<Integer, DHTUserInterface>();
-			} else {
-				switch (tableManager.getPosicion(myId)) {
-				case 0:
-					DHTTables.put(0, tabla0.get(0));// Al servidor 0 le metemos la tabla 0
-					DHTTables.put(1, tabla1.get(1));// Al servidor 0 le metemos la tabla 1
-					break;
-				case 1:
-					DHTTables.put(1, tabla1.get(1));// Al servidor 1 le metemos la tabla 1
-					DHTTables.put(2, tabla2.get(2));// Al servidor 1 le metemos la tabla 2
-					break;
-				default:
-					DHTTables.put(2, tabla2.get(2));// Al servidor 2 le metemos la tabla 2
-					DHTTables.put(0, tabla0.get(0));// Al servidor 2 le metemos la tabla 0
-					break;
-				}
+			switch (tableManager.getPosicion(myId)) {
+			case 0:
+				DHTTables.put(0, tabla0.get(0));// Al servidor 0 le metemos la tabla 0
+				DHTTables.put(1, tabla1.get(1));// Al servidor 0 le metemos la tabla 1
+				break;
+			case 1:
+				DHTTables.put(1, tabla1.get(1));// Al servidor 1 le metemos la tabla 1
+				DHTTables.put(2, tabla2.get(2));// Al servidor 1 le metemos la tabla 2
+				break;
+			default:
+				DHTTables.put(2, tabla2.get(2));// Al servidor 2 le metemos la tabla 2
+				DHTTables.put(0, tabla0.get(0));// Al servidor 2 le metemos la tabla 0
+				break;
 			}
 		}
 	}
@@ -452,8 +453,8 @@ public class zkMember{
 		Stat s;
 		byte[] bytes = null;
 		try {
-			s = zk.exists(pathTablas+"-1", false);
-			bytes = zk.getData(pathTablas+"-1", false, s);
+			s = zk.exists(path, false);
+			bytes = zk.getData(path, false, s);
 		} catch (KeeperException | InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -487,6 +488,10 @@ public class zkMember{
 			e.printStackTrace();
 		}
 	}
+
+//-----------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------SERIALIZACION-------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------
 	
 	public static byte[] serialize(HashMap<Integer, DHTUserInterface> tabla) {
 		ByteArrayOutputStream bs = new ByteArrayOutputStream();
