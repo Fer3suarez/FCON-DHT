@@ -25,50 +25,20 @@ public class DHTOperaciones implements DHTUserInterface {
 		this.tableManager = tableManager;
 		this.nReplicas    = nReplicas;
 	}
-	
-	public static byte[] serialize(Operacion op) {
-		ByteArrayOutputStream bs = new ByteArrayOutputStream();
-		ObjectOutputStream os;
-		try {
-			os = new ObjectOutputStream(bs);
-			os.writeObject(op);
-			os.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		byte[] bytes = bs.toByteArray();
-		return bytes;
-	}
-	
-	public static Operacion deserialize(byte[] bytes) {
-		ByteArrayInputStream bs = new ByteArrayInputStream(bytes);
-		ObjectInputStream is;
-		try {
-			is = new ObjectInputStream(bs);
-			Operacion op = (Operacion) is.readObject();
-			return op;
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
+//-----------------------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------OPERACIONES----------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------
 	@Override
 	public Integer put(DHT_Map map) {
 	
 		OperationsDHT operation; 
 		LOGGER.finest("PUT: Is invoked");
-		operation = new OperationsDHT(OperationEnum.PUT_MAP, map, true);
+		operation = new OperationsDHT(OperationEnum.PUT_MAP, map);
 		int nodes[] = tableManager.getNodes(map.getKey());
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);
 		byte[] bytes = serialize(datosOperacion); //Serializar datos de la operacion
 		zkMember.crearZnodeOperacion(bytes);
-		//zkOperation op = new zkOperation(bytes);
-		//operation = mutex.sendOperation();
+		operation = mutex.sendOperation();
 		return operation.getValue();
 	}
 
@@ -85,13 +55,12 @@ public class DHTOperaciones implements DHTUserInterface {
 	public Integer get(String key) {
 		OperationsDHT operation; 
 		LOGGER.finest("GET: Is invoked");
-		operation = new OperationsDHT(OperationEnum.GET_MAP, key, true);
+		operation = new OperationsDHT(OperationEnum.GET_MAP, key);
 		int nodes[] = tableManager.getNodes(key);
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);
 		byte[] bytes = serialize(datosOperacion); //Serializar datos de la operacion
 		zkMember.crearZnodeOperacion(bytes);
-		//zkOperation op = new zkOperation(bytes);
-		//operation = mutex.sendOperation();
+		operation = mutex.sendOperation();
 		return operation.getValue();
 	}
 
@@ -108,13 +77,12 @@ public class DHTOperaciones implements DHTUserInterface {
 	public Integer remove(String key) {
 		OperationsDHT operation; 
 		LOGGER.finest("GET: Is invoked");
-		operation = new OperationsDHT(OperationEnum.REMOVE_MAP, key, true);
+		operation = new OperationsDHT(OperationEnum.REMOVE_MAP, key);
 		int nodes[] = tableManager.getNodes(key);
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);
 		byte[] bytes = serialize(datosOperacion); //Serializar datos de la operacion
 		zkMember.crearZnodeOperacion(bytes);
-		//zkOperation op = new zkOperation(bytes);
-		//operation = mutex.sendOperation();
+		operation = mutex.sendOperation();
 		return operation.getValue();
 	}
 
@@ -167,5 +135,39 @@ public class DHTOperaciones implements DHTUserInterface {
 	public Integer removeMsg(String key) {
 		// TODO Auto-generated method stub
 		return removeLocal(key);
+	}
+//-----------------------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------SERIALIZACIONES---------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------
+	
+	public static byte[] serialize(Operacion op) {
+		ByteArrayOutputStream bs = new ByteArrayOutputStream();
+		ObjectOutputStream os;
+		try {
+			os = new ObjectOutputStream(bs);
+			os.writeObject(op);
+			os.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		byte[] bytes = bs.toByteArray();
+		return bytes;
+	}
+	
+	public static Operacion deserialize(byte[] bytes) {
+		ByteArrayInputStream bs = new ByteArrayInputStream(bytes);
+		ObjectInputStream is;
+		try {
+			is = new ObjectInputStream(bs);
+			Operacion op = (Operacion) is.readObject();
+			return op;
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

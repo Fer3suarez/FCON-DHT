@@ -20,19 +20,16 @@ public class OperationsDHT implements Serializable {
 
 	// PUT_MAP
 	public OperationsDHT (OperationEnum operation,
-			DHT_Map map, 
-			boolean isReplica)           {
+			DHT_Map map) {
 		this.operation = operation;
 		this.map       = map;
 	}
 
 	// GET_MAP REMOVE_MAP CONTAINS_KEY_MAP
 	public OperationsDHT (OperationEnum operation,
-			String key,           
-			boolean isReplica) {
+			String key) {
 		this.operation = operation;
 		this.key       = key;
-		this.isReplica = isReplica;
 	}
 
 	// KEY_SET_HM, VALUES_HM, INIT	

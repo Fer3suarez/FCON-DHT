@@ -28,7 +28,7 @@ public class DHTMain {
 
 	public void initMembers(DHTUserInterface dht) {
 			dht.put(new DHT_Map("Angel", 1));
-			dht.put(new DHT_Map("Bernardo", 2));
+//			dht.put(new DHT_Map("Bernardo", 2));
 //			dht.put(new DHT_Map("Carlos", 3));
 //			dht.put(new DHT_Map("Daniel", 4));
 //			dht.put(new DHT_Map("Eugenio", 5));
@@ -51,6 +51,9 @@ public class DHTMain {
 		}
 		return new DHT_Map(key, value);
 	}
+//-----------------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------MAIN------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------	
 
 	public static void main(String[] args) {
 		boolean correct = false;
@@ -67,7 +70,7 @@ public class DHTMain {
 				correct = false;
 				menuKey = 0;
 				while (!correct) {
-					System. out .println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
+					System. out .println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 6) Init 0) Exit");				
 					if (sc.hasNextInt()) {
 						menuKey = sc.nextInt();
 						correct = true;
@@ -117,15 +120,13 @@ public class DHTMain {
 					System.out.println("List of values in the DHT:");
 					System.out.println(dht.toString());
 					break;
-				case 6:
-					System.out.println("The option is not available");
-					break;
 				case 7:
 					mainDHT.initMembers(dht);
 					break;
 				case 0:
 					exit = true;	
 				default:
+					System.out.println("The option is not available");
 					break;
 				}
 			} catch (Exception e) {

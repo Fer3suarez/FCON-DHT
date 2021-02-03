@@ -25,24 +25,23 @@ public class zkMember{
 	private static String rootMembers = "/members";
 	private static String aMember = "/member-";
 	private static String pathTablas = "/tableDHT";
-	private static String pathOperaciones = "/Ops";
 	private static String rootOp = "/Ops";
 	private static String aOp = "/op-";
-	private String myId;
+	private static String myId;
 	private static String myOp;
 	private String localAddress;
+	private static operationBlocking mutex;
 	//Variables de ViewManager;
-	private int       nServersMax;
-	private int       nServers;
+	private static int       nServersMax;
+	private static int       nServers;
 	private int       nReplicas;
-	private int       mutex;
 	private List<String> previousServer    = null;
 	private boolean   isQuorum       = false;
 	private boolean   firstQuorum    = false;
 	private boolean   pendingReplica = false;
 	private String    failedServerTODO;
-	private TableManager tableManager;
-	private DHTUserInterface dht;
+	private static TableManager tableManager;
+	private static DHTUserInterface dht;
 	
 	
 	// This is static. A list of zookeeper can be provided for decide where to connect
@@ -53,9 +52,9 @@ public class zkMember{
 	public zkMember(int nServersMax, int nReplicas, operationBlocking mutex, 
 			TableManager tableManager, DHTUserInterface dht) {
 		this.nServers     = 0;
+		this.mutex        = mutex;
 		this.nServersMax  = nServersMax;
 		this.nReplicas    = nReplicas;
-		this.mutex        = -1;
 		this.tableManager = tableManager;
 		this.dht          = dht;
 		
@@ -69,8 +68,8 @@ public class zkMember{
 		List<String> list = null;
 		list = confZK(list);
 		manageServers(list);
-		guardarInfoEnTablas();
 		actualizarServers();
+		guardarInfoEnTablas();
 		confOperaciones();
 		ByteArrayOutputStream bs = new ByteArrayOutputStream();
 		ObjectOutputStream os;
@@ -140,7 +139,7 @@ public class zkMember{
 							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 					System.out.println("Nodos de tablas creadas");
 				}
-				// Create a znode for registering as member and get my id
+				//Create a znode for registering as member and get my id
 				myId = zk.create(rootMembers + aMember, new byte[0], 
 						Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
 				myId = myId.replace(rootMembers + "/", "");
@@ -180,11 +179,11 @@ public class zkMember{
 		System.out.println();
 	}
 	
-	private void printListOperaciones (List<String> list) {
+	private static void printListOperaciones (List<String> list) {
 		System.out.println("Remaining # operaciones:" + list.size());
 		for (Iterator<String> iterator = list.iterator(); iterator.hasNext();) {
 			String string = (String) iterator.next();
-			System.out.print(string + ", ");				
+			System.out.print(string + ", ");
 		}
 		System.out.println();
 	}
@@ -218,38 +217,23 @@ public class zkMember{
 			}
 		};
 		
-		private Watcher  watcherOperacion = new Watcher() {
+		private static Watcher  watcherOperacion = new Watcher() {
 			public void process(WatchedEvent event) {
 				System.out.println("------------------Watcher Operacion------------------\n");		
 				try {
-					List<String> list = zk.getChildren(pathOperaciones,  watcherOperacion); //this);
+					List<String> list = zk.getChildren(rootOp,  watcherOperacion); //this);
 					if(list.size() > 0) {
 						printListOperaciones(list);
 						procesarOperacion();
-						System.out.println("Operación terminada");
+						Stat s = zk.exists(rootOp, false);
+						zk.getChildren(rootOp, watcherOperacion, s);
+						System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
 					} else {
 						actualizarServers();
 						System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
 					}
 				} catch (Exception e) {
 					System.out.println(e);
-				}
-			}
-		};
-		
-		private static Watcher watcherCrearOperacion = new Watcher() {
-			public void process(WatchedEvent event) {
-				System.out.println("------------------Watcher Operacion------------------\n");	
-				try {
-					Stat s = zk.exists(myOp, false);
-					byte[] bytes = zk.getData(myOp, false, s);
-					Operacion op;
-					op = deserializeOp(bytes);
-					System.out.println("La operacion es: "+ op);
-					System.out.println("Se necesitan 2 respuestas para borrar la operacion");
-					comprobarRespuestas(op, s);
-				} catch (Exception e) {
-					// TODO: handle exception
 				}
 			}
 		};
@@ -278,8 +262,6 @@ public class zkMember{
 				// Create a znode for registering as member and get my id
 				myOp = zk.create(rootOp + aOp, bytes, 
 						Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
-				Stat s2 = zk.exists(myOp, false);
-				zk.getData(myOp, watcherCrearOperacion, s2);
 				myOp = myOp.replace(rootOp + "/", "");
 				List<String> list = zk.getChildren(rootOp, false, s); //this, s);
 				System.out.println("Created znode operation id: "+ myOp);
@@ -293,15 +275,20 @@ public class zkMember{
 	}
 	
 	private static void comprobarRespuestas(Operacion op, Stat s) {
-		boolean opOk = true;
+		boolean opOk = false;
 		int[] respuestas = op.getRespuestas();
-		if(respuestas[0] == 0 || respuestas[1] == 0) opOk = false;
+		if(respuestas[0] != 0 || respuestas[1] != 0) opOk = true;
 		if(opOk) {
-			System.out.println("Se han recibido las dos respuestas y se puede borrar la operacion");
-			//mutex.receiveOperation(op.getOperacion());
+			System.out.println("Se ha recibido la respuesta y se puede borrar la operacion");
+			System.out.println("Se ha eliminado el znode de la operacion: "+ myOp);
+			mutex.receiveOperation(op.getOperacion());
 			try {
-				s = zk.exists(myOp, false);
-				zk.delete(myOp, s.getVersion());
+				s = zk.exists(rootOp+"/"+myOp, false);
+				zk.delete(rootOp+"/"+myOp, s.getVersion());
+				List<String> listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
+				System.out.println("Operations: " + listOperaciones.size());
+				printListOperaciones(listOperaciones);
+				guardarInfoEnTablas();
 			} catch (InterruptedException | KeeperException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -312,20 +299,17 @@ public class zkMember{
 	public void confOperaciones() {
 		if(zk != null) {
 			try {
-				Stat s = zk.exists(pathOperaciones, false);
+				Stat s = zk.exists(rootOp, false);
 				if(s == null) {
-					myOp = zk.create(pathOperaciones, new byte[0], 
+					myOp = zk.create(rootOp, new byte[0], 
 							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 					System.out.println("Nodo de operaciones creado");
-					myOp = myOp.replace(pathOperaciones + "/", "");
+					myOp = myOp.replace(rootOp + "/", "");
 				}
-//				myOp = zk.create(pathOperaciones+"/op-", new byte[0], 
-//						Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
-				//myOp = zkOperation.getOpPath();
-				Stat s2 = zk.exists(pathOperaciones, false);
-				zk.getData(pathOperaciones, watcherOperacion, s2);
-				s = zk.exists(pathOperaciones, false);
-				List<String> listOperaciones = zk.getChildren(pathOperaciones, watcherOperacion, s);
+				Stat s2 = zk.exists(rootOp, false);
+				zk.getData(rootOp, watcherOperacion, s2);
+				s = zk.exists(rootOp, false);
+				List<String> listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
 				System.out.println("Operations: " + listOperaciones.size());
 				printListOperaciones(listOperaciones);
 			} catch (Exception e) {
@@ -334,16 +318,16 @@ public class zkMember{
 		}
 	}
 		
-	public void procesarOperacion() {
+	public static void procesarOperacion() {
 		List<String> list;
 		boolean operar = false;
 		try {
-			list = zk.getChildren(pathOperaciones, false);
-			//myOp = list.get(0);
+			list = zk.getChildren(rootOp, false);
+			myOp = list.get(0);
 			if(list.indexOf(myOp.substring(myOp.lastIndexOf('/')+1)) == 0) {
-				System.out.println("Soy el lider");
-				Stat s = zk.exists(pathOperaciones, false);
-				byte[] bytes = zk.getData(pathOperaciones+"/"+myOp, false, s);
+				System.out.println("Puedo procesar la operacion");
+				Stat s = zk.exists(rootOp, false);
+				byte[] bytes = zk.getData(rootOp+"/"+myOp, false, s);
 				Operacion op = deserializeOp(bytes);
 				int[] nodos = op.getNodos();
 				for (int j = 0; j < nodos.length; j++) {
@@ -379,10 +363,21 @@ public class zkMember{
 					}
 					op.setRespuestas(respuestas);
 					op.setOperacion(o);
+					byte [] data = serializeOp(op);
+					s = zk.exists(rootOp+"/"+myOp, false);
+					zk.setData(rootOp+"/"+myOp, data, s.getVersion());
 				}
 				if(!operar) System.out.println("Este servidor no procesa esta operacion");
-				Stat s3 = zk.exists(pathOperaciones+"/"+list.get(0), false);
-				zk.delete(pathOperaciones+"/"+list.get(0), s3.getVersion());
+
+				Stat s3 = zk.exists(rootOp+"/"+myOp, false);
+				byte[] bytes3 = zk.getData(rootOp+"/"+myOp, false, s3);
+				Operacion ope;
+				ope = deserializeOp(bytes3);
+				System.out.println("La operacion es: "+ op);
+				System.out.println("Se necesitan 2 respuestas para borrar la operacion");
+				comprobarRespuestas(ope, s3);
+				System.out.println("Operación terminada");
+				
 			}
 		} catch (KeeperException | InterruptedException e) {
 			// TODO Auto-generated catch block
@@ -517,7 +512,7 @@ public class zkMember{
 	}
 	
 	//En cada tabla van dos servidores
-	public void guardarInfoEnTablas() {
+	public static void guardarInfoEnTablas() {
 		if(nServers == nServersMax) {
 			HashMap<Integer, DHTUserInterface> DHTTables = tableManager.getDHTTables();
 			HashMap<Integer, DHTUserInterface> tabla0 = obtenerTablas(pathTablas+"-0");
@@ -540,7 +535,7 @@ public class zkMember{
 		}
 	}
 	
-	public HashMap<Integer, DHTUserInterface> obtenerTablas(String path){
+	public static HashMap<Integer, DHTUserInterface> obtenerTablas(String path){
 		HashMap<Integer, DHTUserInterface> tabla = new HashMap<Integer, DHTUserInterface>();
 		Stat s;
 		byte[] bytes = null;
@@ -557,7 +552,7 @@ public class zkMember{
 		return tabla;
 	}
 	
-	public void actualizarServers() {
+	public static void actualizarServers() {
 		switch (tableManager.getPosicion(myId)) {
 		case 0:
 			actualizarTablas(pathTablas+"-0", tableManager.getDHTTables());
@@ -571,7 +566,7 @@ public class zkMember{
 		}
 	}
 		
-	public void actualizarTablas(String path, HashMap<Integer, DHTUserInterface> tabla){
+	public static void actualizarTablas(String path, HashMap<Integer, DHTUserInterface> tabla){
 		byte[] bytes = null;
 		try {
 			bytes = serialize(tabla);
@@ -582,7 +577,6 @@ public class zkMember{
 			e.printStackTrace();
 		}
 	}
-
 //-----------------------------------------------------------------------------------------------------------------------------
 //---------------------------------------------SERIALIZACION-------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------------------------------
