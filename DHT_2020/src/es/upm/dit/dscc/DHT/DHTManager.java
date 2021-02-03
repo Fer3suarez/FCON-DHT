@@ -72,4 +72,22 @@ public class DHTManager implements DHTUserInterface {
 	public String toString() {
 		return dht.toString();
 	}
+
+	@Override
+	public Integer putMsg(DHT_Map map) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Integer getMsg(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Integer removeMsg(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
