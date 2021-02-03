@@ -66,7 +66,8 @@ public class DHTOperaciones implements DHTUserInterface {
 		int nodes[] = tableManager.getNodes(map.getKey());
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);
 		byte[] bytes = serialize(datosOperacion); //Serializar datos de la operacion
-		zkOperation op = new zkOperation(bytes);
+		zkMember.crearZnodeOperacion(bytes);
+		//zkOperation op = new zkOperation(bytes);
 		//operation = mutex.sendOperation();
 		return operation.getValue();
 	}
@@ -88,7 +89,8 @@ public class DHTOperaciones implements DHTUserInterface {
 		int nodes[] = tableManager.getNodes(key);
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);
 		byte[] bytes = serialize(datosOperacion); //Serializar datos de la operacion
-		zkOperation op = new zkOperation(bytes);
+		zkMember.crearZnodeOperacion(bytes);
+		//zkOperation op = new zkOperation(bytes);
 		//operation = mutex.sendOperation();
 		return operation.getValue();
 	}
@@ -110,7 +112,8 @@ public class DHTOperaciones implements DHTUserInterface {
 		int nodes[] = tableManager.getNodes(key);
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);
 		byte[] bytes = serialize(datosOperacion); //Serializar datos de la operacion
-		zkOperation op = new zkOperation(bytes);
+		zkMember.crearZnodeOperacion(bytes);
+		//zkOperation op = new zkOperation(bytes);
 		//operation = mutex.sendOperation();
 		return operation.getValue();
 	}
@@ -147,5 +150,22 @@ public class DHTOperaciones implements DHTUserInterface {
 	@Override
 	public String toString() {
 		return tableManager.toString();
+	}
+	
+	@Override
+	public Integer putMsg(DHT_Map map) {
+		return putLocal(map);
+	}
+
+	@Override
+	public Integer getMsg(String key) {
+		// TODO Auto-generated method stub
+		return getLocal(key);
+	}
+
+	@Override
+	public Integer removeMsg(String key) {
+		// TODO Auto-generated method stub
+		return removeLocal(key);
 	}
 }

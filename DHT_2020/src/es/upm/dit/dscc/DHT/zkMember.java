@@ -26,8 +26,10 @@ public class zkMember{
 	private static String aMember = "/member-";
 	private static String pathTablas = "/tableDHT";
 	private static String pathOperaciones = "/Ops";
+	private static String rootOp = "/Ops";
+	private static String aOp = "/op-";
 	private String myId;
-	private String myOp;
+	private static String myOp;
 	private String localAddress;
 	//Variables de ViewManager;
 	private int       nServersMax;
@@ -46,7 +48,7 @@ public class zkMember{
 	// This is static. A list of zookeeper can be provided for decide where to connect
 	String[] hosts = {"127.0.0.1:2181", "127.0.0.1:2181", "127.0.0.1:2181"};
 
-	private ZooKeeper zk;
+	private static ZooKeeper zk;
 	
 	public zkMember(int nServersMax, int nReplicas, operationBlocking mutex, 
 			TableManager tableManager, DHTUserInterface dht) {
@@ -94,7 +96,6 @@ public class zkMember{
 		System.out.println("Created cluster ZK with: " + list.size() + " members");
 		printListMembers(list);
 		// Add the process to the members, servers and tables in zookeeper
-		
 	}
 	
 	public void createSessionZK(int i) {
@@ -179,12 +180,21 @@ public class zkMember{
 		System.out.println();
 	}
 	
+	private void printListOperaciones (List<String> list) {
+		System.out.println("Remaining # operaciones:" + list.size());
+		for (Iterator<String> iterator = list.iterator(); iterator.hasNext();) {
+			String string = (String) iterator.next();
+			System.out.print(string + ", ");				
+		}
+		System.out.println();
+	}
+	
 //-----------------------------------------------------------------------------------------------------------------------------
 //-----------------------------------------------------WATCHERS----------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------------------------------
 		
 		// Notified when the session is created
-		private Watcher cWatcher = new Watcher() {
+		private static Watcher cWatcher = new Watcher() {
 			public void process (WatchedEvent e) {
 				System.out.println("Created session");
 				notify();
@@ -214,8 +224,9 @@ public class zkMember{
 				try {
 					List<String> list = zk.getChildren(pathOperaciones,  watcherOperacion); //this);
 					if(list.size() > 0) {
-						printListMembers(list);
-						procesarOperacion();				
+						printListOperaciones(list);
+						procesarOperacion();
+						System.out.println("Operación terminada");
 					} else {
 						actualizarServers();
 						System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
@@ -226,9 +237,78 @@ public class zkMember{
 			}
 		};
 		
+		private static Watcher watcherCrearOperacion = new Watcher() {
+			public void process(WatchedEvent event) {
+				System.out.println("------------------Watcher Operacion------------------\n");	
+				try {
+					Stat s = zk.exists(myOp, false);
+					byte[] bytes = zk.getData(myOp, false, s);
+					Operacion op;
+					op = deserializeOp(bytes);
+					System.out.println("La operacion es: "+ op);
+					System.out.println("Se necesitan 2 respuestas para borrar la operacion");
+					comprobarRespuestas(op, s);
+				} catch (Exception e) {
+					// TODO: handle exception
+				}
+			}
+		};
+		
 //-----------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------OPERACIONES------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------------------------------
+	public static void crearZnodeOperacion(byte[] bytes) {
+		String[] hosts = {"127.0.0.1:2181", "127.0.0.1:2181", "127.0.0.1:2181"};
+		// Select a random zookeeper server
+		Random rand = new Random();
+		int i = rand.nextInt(hosts.length);
+		// Add the process to the members, servers and tables in zookeeper
+		if (zk != null) {
+			// Create a folder for members and include this process/server
+			try {
+				// Create a members folder, if it is not created
+				String response = new String();
+				Stat s = zk.exists(rootOp, false); //this);
+				if (s == null) {
+					// Created the znode, if it is not created.
+					response = zk.create(rootOp, new byte[0], 
+							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					System.out.println(response);
+				}
+				// Create a znode for registering as member and get my id
+				myOp = zk.create(rootOp + aOp, bytes, 
+						Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+				Stat s2 = zk.exists(myOp, false);
+				zk.getData(myOp, watcherCrearOperacion, s2);
+				myOp = myOp.replace(rootOp + "/", "");
+				List<String> list = zk.getChildren(rootOp, false, s); //this, s);
+				System.out.println("Created znode operation id: "+ myOp);
+			} catch (KeeperException e) {
+				System.out.println("The session with Zookeeper failes. Closing");
+				return;
+			} catch (InterruptedException e) {
+				System.out.println("InterruptedException raised");
+			}
+		}
+	}
+	
+	private static void comprobarRespuestas(Operacion op, Stat s) {
+		boolean opOk = true;
+		int[] respuestas = op.getRespuestas();
+		if(respuestas[0] == 0 || respuestas[1] == 0) opOk = false;
+		if(opOk) {
+			System.out.println("Se han recibido las dos respuestas y se puede borrar la operacion");
+			//mutex.receiveOperation(op.getOperacion());
+			try {
+				s = zk.exists(myOp, false);
+				zk.delete(myOp, s.getVersion());
+			} catch (InterruptedException | KeeperException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+		
 	public void confOperaciones() {
 		if(zk != null) {
 			try {
@@ -241,13 +321,13 @@ public class zkMember{
 				}
 //				myOp = zk.create(pathOperaciones+"/op-", new byte[0], 
 //						Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
-				myOp = zkOperation.getOpPath();
-				Stat s2 = zk.exists(myOp, false);
-				zk.getData(myOp, watcherOperacion, s2);
+				//myOp = zkOperation.getOpPath();
+				Stat s2 = zk.exists(pathOperaciones, false);
+				zk.getData(pathOperaciones, watcherOperacion, s2);
 				s = zk.exists(pathOperaciones, false);
 				List<String> listOperaciones = zk.getChildren(pathOperaciones, watcherOperacion, s);
 				System.out.println("Operations: " + listOperaciones.size());
-				printListMembers(listOperaciones);
+				printListOperaciones(listOperaciones);
 			} catch (Exception e) {
 				// TODO: handle exception
 			}
@@ -259,11 +339,11 @@ public class zkMember{
 		boolean operar = false;
 		try {
 			list = zk.getChildren(pathOperaciones, false);
-			int indice = list.indexOf(myOp.substring(myOp.lastIndexOf('/')+1));
-			if(indice == 0) {
+			//myOp = list.get(0);
+			if(list.indexOf(myOp.substring(myOp.lastIndexOf('/')+1)) == 0) {
 				System.out.println("Soy el lider");
 				Stat s = zk.exists(pathOperaciones, false);
-				byte[] bytes = zk.getData(pathOperaciones, false, s);
+				byte[] bytes = zk.getData(pathOperaciones+"/"+myOp, false, s);
 				Operacion op = deserializeOp(bytes);
 				int[] nodos = op.getNodos();
 				for (int j = 0; j < nodos.length; j++) {
@@ -278,15 +358,15 @@ public class zkMember{
 					int respuesta;
 					switch ((OperationEnum) o.getOperation()) {
 					case GET_MAP:
-						respuesta = dht.get(o.getKey());
+						respuesta = dht.getMsg(o.getKey());
 						o.setValue(respuesta);
 						break;
 					case PUT_MAP:
-						respuesta = dht.put(o.getMap());
+						respuesta = dht.putMsg(o.getMap());
 						o.setValue(respuesta);
 						break;
 					default:
-						respuesta = dht.remove(o.getKey());
+						respuesta = dht.removeMsg(o.getKey());
 						o.setValue(respuesta);
 						break;
 					}
@@ -300,6 +380,9 @@ public class zkMember{
 					op.setRespuestas(respuestas);
 					op.setOperacion(o);
 				}
+				if(!operar) System.out.println("Este servidor no procesa esta operacion");
+				Stat s3 = zk.exists(pathOperaciones+"/"+list.get(0), false);
+				zk.delete(pathOperaciones+"/"+list.get(0), s3.getVersion());
 			}
 		} catch (KeeperException | InterruptedException e) {
 			// TODO Auto-generated catch block
@@ -468,7 +551,9 @@ public class zkMember{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		tabla = deserialize(bytes);
+		if(bytes.length != 0) {
+			tabla = deserialize(bytes);
+		}
 		return tabla;
 	}
 	
