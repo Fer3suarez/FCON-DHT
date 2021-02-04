@@ -210,7 +210,7 @@ public class zkMember{
 		private static Watcher cWatcher = new Watcher() {
 			@Override
 			public void process (WatchedEvent e) {
-				System.out.println("Created session");
+				System.out.println("---DHT-FCON---\n"+"Created session");
 				notify();
 			}
 		};

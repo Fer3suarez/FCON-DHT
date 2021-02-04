@@ -99,7 +99,8 @@ public class TableManager {
 	@Override
 	public String toString() {
 		DHTUserInterface dht;
-		String aux = "Size: " + DHTTables.size() + " Local server: " + getPosicion(localAddress) +"\n";
+		String aux = "|-------DHT-FCON-------|\n"
+				+ "Size: " + DHTTables.size() + " Local server: " + getPosicion(localAddress) +"\n";
 		aux = aux + printDHTServers() + "\n";
 		for (int i = 0; i < nServersMax; i ++) {
 			dht = DHTTables.get(i);
