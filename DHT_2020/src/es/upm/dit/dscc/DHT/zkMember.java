@@ -21,7 +21,7 @@ import org.apache.zookeeper.data.Stat;
 
 public class zkMember{
 	private static final int SESSION_TIMEOUT = 5000;
-	private java.util.logging.Logger LOGGER = DHTMain.LOGGER;
+	private static java.util.logging.Logger LOGGER = DHTMain.LOGGER;
 	private static String rootMembers = "/members";
 	private static String aMember = "/member-";
 	private static String pathTablas = "/tableDHT";
@@ -69,9 +69,16 @@ public class zkMember{
 		list = confZK(list);
 		manageServers(list);
 		actualizarServers();
-		guardarInfoEnTablas();
+		//guardarDatosEnTablas();
 		Stat s2;
 		try {
+			s2 = zk.exists(rootOp, false);
+			if(s2 == null) {
+				myOp = zk.create(rootOp, new byte[0], 
+						Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+				System.out.println("ZNode de operaciones creado");
+				myOp = myOp.replace(rootOp + "/", "");
+			}
 			s2 = zk.exists(rootOp, false);
 			List<String> listOperaciones = zk.getChildren(rootOp, watcherOperacion, s2);
 			System.out.println("Operations: " + listOperaciones.size());
@@ -133,7 +140,7 @@ public class zkMember{
 					// Created the znode, if it is not created.
 					zk.create(rootMembers, new byte[0], 
 							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-					System.out.println("Nodo de miembros creado");
+					System.out.println("ZNode de miembros creado");
 				}
 				// Create a tables folder, if it is not created
 				Stat s0 = zk.exists(pathTablas+"-0", false); //this);
@@ -146,14 +153,13 @@ public class zkMember{
 							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 					zk.create(pathTablas+"-2", new byte[0], 
 							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-					System.out.println("Nodos de tablas creadas");
+					System.out.println("ZNodes de tablas creadas");
 				}
 				//Create a znode for registering as member and get my id
 				myId = zk.create(rootMembers + aMember, new byte[0], 
 						Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
 				myId = myId.replace(rootMembers + "/", "");
 				list = zk.getChildren(rootMembers, watcherMember, s); //this, s);
-				Collections.sort(list);
 				zkMember.tableManager.setLocalAddress(myId);
 				this.localAddress = myId;
 				return list;
@@ -242,7 +248,7 @@ public class zkMember{
 						System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
 					} else {
 						actualizarServers();
-						guardarInfoEnTablas();
+						guardarDatosEnTablas();
 						System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
 					}
 				} catch (Exception e) {
@@ -287,38 +293,6 @@ public class zkMember{
 		}
 	}
 	
-	private static void comprobarRespuestas(Operacion op, Stat s) {
-		boolean opOk = false;
-		int[] respuestas = op.getRespuestas();
-		boolean eliminar = false;
-		if(respuestas[0] != 0 || respuestas[1] != 0) opOk = eliminar = true;
-		if(opOk && eliminar) {
-			System.out.println("Se ha recibido la respuesta y se puede borrar la operacion");
-			System.out.println("Se ha eliminado el znode de la operacion: "+ myOp);
-			mutex.receiveOperation(op.getOperacion());
-			try {
-				s = zk.exists(rootOp+"/"+myOp, false);
-				if(s != null) zk.delete(rootOp+"/"+myOp, s.getVersion());
-				List<String> listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
-				System.out.println("Operations: " + listOperaciones.size());
-				printListOperaciones(listOperaciones);
-			} catch (InterruptedException | KeeperException e) {
-				// TODO Auto-generated catch block
-				List<String> listOperaciones;
-				try {
-					listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
-					System.out.println("Operations: " + listOperaciones.size());
-					printListOperaciones(listOperaciones);
-				} catch (KeeperException | InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			}
-		}
-		actualizarServers();
-		guardarInfoEnTablas();
-	}
-	
 	public static void procesarOperacion() {
 		List<String> list;
 		boolean operar = false;
@@ -326,14 +300,14 @@ public class zkMember{
 			list = zk.getChildren(rootOp, false);
 			myOp = list.get(0);
 			if(list.indexOf(myOp.substring(myOp.lastIndexOf('/')+1)) == 0) {
-				System.out.println("Puedo procesar la operacion");
+				LOGGER.finest("Puedo procesar la operacion");
 				Stat s = zk.exists(rootOp, false);
 				byte[] bytes = zk.getData(rootOp+"/"+myOp, false, s);
 				Operacion op = deserializeOp(bytes);
 				int[] nodos = op.getNodos();
 				for (int j = 0; j < nodos.length; j++) {
 					if(nodos[j] == tableManager.getPosicion(myId)) {
-						System.out.println("El servidor necesita procesar la operacion y dar una respuesta");
+						LOGGER.finest("El servidor necesita procesar la operacion y dar una respuesta");
 						operar = true;
 					}
 				}
@@ -368,14 +342,14 @@ public class zkMember{
 					s = zk.exists(rootOp+"/"+myOp, false);
 					zk.setData(rootOp+"/"+myOp, data, s.getVersion());
 				}
-				if(!operar) System.out.println("Este servidor no procesa esta operacion");
+				if(!operar) LOGGER.finest("Este servidor no procesa esta operacion");
 				
 				Stat s3 = zk.exists(rootOp+"/"+myOp, false);
 				byte[] bytes3 = zk.getData(rootOp+"/"+myOp, false, s3);
 				Operacion ope;
 				ope = deserializeOp(bytes3);
-				System.out.println("La operacion es: "+ op);
-				System.out.println("Se necesitan 2 respuestas para borrar la operacion");
+				LOGGER.finest("La operacion es: "+ op);
+				LOGGER.finest("Se necesitan 2 respuestas para borrar la operacion");
 				comprobarRespuestas(ope, s3);
 				System.out.println("Operación terminada");
 				
@@ -384,6 +358,38 @@ public class zkMember{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public static void comprobarRespuestas(Operacion op, Stat s) {
+		boolean opOk = false;
+		int[] respuestas = op.getRespuestas();
+		boolean eliminar = false;
+		if(respuestas[0] != 0 || respuestas[1] != 0) opOk = eliminar = true;
+		if(opOk && eliminar) {
+			LOGGER.finest("Se ha recibido la respuesta y se puede borrar la operacion");
+			LOGGER.finest("Se ha eliminado el znode de la operacion: "+ myOp);
+			mutex.receiveOperation(op.getOperacion());
+			try {
+				s = zk.exists(rootOp+"/"+myOp, false);
+				if(s != null) zk.delete(rootOp+"/"+myOp, s.getVersion());
+				List<String> listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
+				System.out.println("Operations: " + listOperaciones.size());
+				printListOperaciones(listOperaciones);
+			} catch (InterruptedException | KeeperException e) {
+				// TODO Auto-generated catch block
+				List<String> listOperaciones;
+				try {
+					listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
+					System.out.println("Operations: " + listOperaciones.size());
+					printListOperaciones(listOperaciones);
+				} catch (KeeperException | InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		}
+		actualizarServers();
+		guardarDatosEnTablas();
 	}
 //-----------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------ANTIGUO VIEWMANAGER (GESTION DE SERVERS)-------------------------------------------
@@ -404,7 +410,6 @@ public class zkMember{
 						DHTTables.put(i, new DHTHashMap());
 					}	
 					nServers++;
-					//sendMessages.sendServers(address, DHTServers);
 					LOGGER.finest("Added a server. NServers: " + nServers);
 					return DHTServers;
 				}
@@ -513,12 +518,13 @@ public class zkMember{
 	}
 	
 	//En cada tabla van dos servidores
-	public static void guardarInfoEnTablas() {
+	public static void guardarDatosEnTablas() {
 		if(nServers == nServersMax) {
 			HashMap<Integer, DHTUserInterface> DHTTables = tableManager.getDHTTables();
 			HashMap<Integer, DHTUserInterface> tabla0 = obtenerTablas(pathTablas+"-0");
 			HashMap<Integer, DHTUserInterface> tabla1 = obtenerTablas(pathTablas+"-1");
 			HashMap<Integer, DHTUserInterface> tabla2 = obtenerTablas(pathTablas+"-2");
+			System.out.println("El myId antes de guardar datos es: "+ myId);
 			switch (tableManager.getPosicion(myId)) {
 			case 0:
 				DHTTables.put(0, tabla0.get(0));// Al servidor 0 le metemos la tabla 0
