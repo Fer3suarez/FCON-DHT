@@ -350,7 +350,6 @@ public class zkMember{
 				Operacion ope;
 				ope = deserializeOp(bytes3);
 				LOGGER.fine("La operacion es: "+ op);
-				System.out.println("La respuesta a la operacion es: " + op.getRespuestas());
 				LOGGER.fine("Se necesitan 2 respuestas para borrar la operacion");
 				comprobarRespuestas(ope, s3);
 				System.out.println("Operación terminada");
