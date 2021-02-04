@@ -69,7 +69,7 @@ public class zkMember{
 		list = confZK(list);
 		manageServers(list);
 		actualizarServers();
-		//guardarDatosEnTablas();
+		guardarDatosEnTablas();
 		Stat s2;
 		try {
 			s2 = zk.exists(rootOp, false);
@@ -187,6 +187,7 @@ public class zkMember{
 	
 	private void printListMembers (List<String> list) {
 		System.out.println("Remaining # members:" + list.size());
+		Collections.sort(list);
 		for (Iterator<String> iterator = list.iterator(); iterator.hasNext();) {
 			String string = iterator.next();
 			System.out.print(string + ", ");				
@@ -196,6 +197,7 @@ public class zkMember{
 	
 	private static void printListOperaciones (List<String> list) {
 		System.out.println("Remaining # operaciones:" + list.size());
+		Collections.sort(list);
 		for (Iterator<String> iterator = list.iterator(); iterator.hasNext();) {
 			String string = iterator.next();
 			System.out.print(string + ", ");
@@ -300,14 +302,14 @@ public class zkMember{
 			list = zk.getChildren(rootOp, false);
 			myOp = list.get(0);
 			if(list.indexOf(myOp.substring(myOp.lastIndexOf('/')+1)) == 0) {
-				LOGGER.finest("Puedo procesar la operacion");
+				LOGGER.fine("Puedo procesar la operacion");
 				Stat s = zk.exists(rootOp, false);
 				byte[] bytes = zk.getData(rootOp+"/"+myOp, false, s);
 				Operacion op = deserializeOp(bytes);
 				int[] nodos = op.getNodos();
 				for (int j = 0; j < nodos.length; j++) {
 					if(nodos[j] == tableManager.getPosicion(myId)) {
-						LOGGER.finest("El servidor necesita procesar la operacion y dar una respuesta");
+						LOGGER.fine("El servidor necesita procesar la operacion y dar una respuesta");
 						operar = true;
 					}
 				}
@@ -340,16 +342,16 @@ public class zkMember{
 					op.setOperacion(o);
 					byte [] data = serializeOp(op);
 					s = zk.exists(rootOp+"/"+myOp, false);
-					zk.setData(rootOp+"/"+myOp, data, s.getVersion());
+					if(s!=null) zk.setData(rootOp+"/"+myOp, data, s.getVersion());
 				}
-				if(!operar) LOGGER.finest("Este servidor no procesa esta operacion");
+				if(!operar) LOGGER.fine("Este servidor no procesa esta operacion");
 				
 				Stat s3 = zk.exists(rootOp+"/"+myOp, false);
 				byte[] bytes3 = zk.getData(rootOp+"/"+myOp, false, s3);
 				Operacion ope;
 				ope = deserializeOp(bytes3);
-				LOGGER.finest("La operacion es: "+ op);
-				LOGGER.finest("Se necesitan 2 respuestas para borrar la operacion");
+				LOGGER.fine("La operacion es: "+ op);
+				LOGGER.fine("Se necesitan 2 respuestas para borrar la operacion");
 				comprobarRespuestas(ope, s3);
 				System.out.println("Operación terminada");
 				
@@ -366,8 +368,8 @@ public class zkMember{
 		boolean eliminar = false;
 		if(respuestas[0] != 0 || respuestas[1] != 0) opOk = eliminar = true;
 		if(opOk && eliminar) {
-			LOGGER.finest("Se ha recibido la respuesta y se puede borrar la operacion");
-			LOGGER.finest("Se ha eliminado el znode de la operacion: "+ myOp);
+			LOGGER.fine("Se ha recibido la respuesta y se puede borrar la operacion");
+			LOGGER.fine("Se ha eliminado el znode de la operacion: "+ myOp);
 			mutex.receiveOperation(op.getOperacion());
 			try {
 				s = zk.exists(rootOp+"/"+myOp, false);
@@ -410,7 +412,7 @@ public class zkMember{
 						DHTTables.put(i, new DHTHashMap());
 					}	
 					nServers++;
-					LOGGER.finest("Added a server. NServers: " + nServers);
+					LOGGER.fine("Added a server. NServers: " + nServers);
 					return DHTServers;
 				}
 			}
@@ -578,7 +580,7 @@ public class zkMember{
 		try {
 			bytes = serialize(tabla);
 			Stat s = zk.exists(path, false);
-			zk.setData(path, bytes, s.getVersion());
+			if(s!=null) zk.setData(path, bytes, s.getVersion());
 		} catch (KeeperException | InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
