@@ -70,7 +70,16 @@ public class zkMember{
 		manageServers(list);
 		actualizarServers();
 		guardarInfoEnTablas();
-		confOperaciones();
+		Stat s2;
+		try {
+			s2 = zk.exists(rootOp, false);
+			List<String> listOperaciones = zk.getChildren(rootOp, watcherOperacion, s2);
+			System.out.println("Operations: " + listOperaciones.size());
+			printListOperaciones(listOperaciones);
+		} catch (KeeperException | InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		ByteArrayOutputStream bs = new ByteArrayOutputStream();
 		ObjectOutputStream os;
 		byte[] bytes= null;
@@ -233,6 +242,7 @@ public class zkMember{
 						System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
 					} else {
 						actualizarServers();
+						guardarInfoEnTablas();
 						System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
 					}
 				} catch (Exception e) {
@@ -288,11 +298,10 @@ public class zkMember{
 			mutex.receiveOperation(op.getOperacion());
 			try {
 				s = zk.exists(rootOp+"/"+myOp, false);
-				zk.delete(rootOp+"/"+myOp, s.getVersion());
+				if(s != null) zk.delete(rootOp+"/"+myOp, s.getVersion());
 				List<String> listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
 				System.out.println("Operations: " + listOperaciones.size());
 				printListOperaciones(listOperaciones);
-				guardarInfoEnTablas();
 			} catch (InterruptedException | KeeperException e) {
 				// TODO Auto-generated catch block
 				List<String> listOperaciones;
@@ -304,34 +313,12 @@ public class zkMember{
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-				guardarInfoEnTablas();
 			}
 		}
+		actualizarServers();
 		guardarInfoEnTablas();
 	}
-		
-	public void confOperaciones() {
-		if(zk != null) {
-			try {
-				Stat s = zk.exists(rootOp, false);
-				if(s == null) {
-					myOp = zk.create(rootOp, new byte[0], 
-							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-					System.out.println("Nodo de operaciones creado");
-					myOp = myOp.replace(rootOp + "/", "");
-				}
-				Stat s2 = zk.exists(rootOp, false);
-				zk.getData(rootOp, watcherOperacion, s2);
-				s = zk.exists(rootOp, false);
-				List<String> listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
-				System.out.println("Operations: " + listOperaciones.size());
-				printListOperaciones(listOperaciones);
-			} catch (Exception e) {
-				// TODO: handle exception
-			}
-		}
-	}
-		
+	
 	public static void procesarOperacion() {
 		List<String> list;
 		boolean operar = false;
@@ -379,11 +366,10 @@ public class zkMember{
 					op.setOperacion(o);
 					byte [] data = serializeOp(op);
 					s = zk.exists(rootOp+"/"+myOp, false);
-					s = zk.exists(rootOp+"/"+myOp, false);
 					zk.setData(rootOp+"/"+myOp, data, s.getVersion());
 				}
 				if(!operar) System.out.println("Este servidor no procesa esta operacion");
-
+				
 				Stat s3 = zk.exists(rootOp+"/"+myOp, false);
 				byte[] bytes3 = zk.getData(rootOp+"/"+myOp, false, s3);
 				Operacion ope;
