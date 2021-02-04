@@ -31,7 +31,7 @@ public class zkMember{
 	private static String myOp;
 	private String localAddress;
 	private static operationBlocking mutex;
-	//Variables de ViewManager;
+	//Variables heredadas del ViewManager;
 	private static int       nServersMax;
 	private static int       nServers;
 	private int       nReplicas;
@@ -42,7 +42,6 @@ public class zkMember{
 	private String    failedServerTODO;
 	private static TableManager tableManager;
 	private static DHTUserInterface dht;
-	
 	
 	// This is static. A list of zookeeper can be provided for decide where to connect
 	String[] hosts = {"127.0.0.1:2181", "127.0.0.1:2181", "127.0.0.1:2181"};
@@ -228,7 +227,7 @@ public class zkMember{
 					manageServers(list);
 					actualizarServers();
 					printListMembers(list);
-					System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
+					System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 6) Init 0) Exit");				
 				} catch (Exception e) {
 					System.out.println(e);
 				}
@@ -250,7 +249,7 @@ public class zkMember{
 					} else {
 						//actualizarServers();
 						guardarDatosEnTablas();
-						System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
+						System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 6) Init 0) Exit");				
 					}
 				} catch (Exception e) {
 					System.out.println(e);

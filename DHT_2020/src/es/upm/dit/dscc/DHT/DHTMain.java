@@ -121,7 +121,7 @@ public class DHTMain {
 					System.out.println("List of values in the DHT:");
 					System.out.println(dht.toString());
 					break;
-				case 7:
+				case 6:
 					mainDHT.initMembers(dht);
 					break;
 				case 0:
