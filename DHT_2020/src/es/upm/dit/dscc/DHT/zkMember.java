@@ -79,11 +79,11 @@ public class zkMember{
 				System.out.println("ZNode de operaciones creado");
 				myOp = myOp.replace(rootOp + "/", "");
 			}
-			s2 = zk.exists(rootOp, false);
-			List<String> listOperaciones = zk.getChildren(rootOp, watcherOperacion, s2);
-			Collections.sort(list);
-			System.out.println("Operations: " + listOperaciones.size());
-			printListOperaciones(listOperaciones);
+		s2 = zk.exists(rootOp, false);
+		List<String> listOperaciones = zk.getChildren(rootOp, watcherOperacion, s2);
+		Collections.sort(list);
+		System.out.println("Operations: " + listOperaciones.size());
+		printListOperaciones(listOperaciones);
 		} catch (KeeperException | InterruptedException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -527,15 +527,12 @@ public class zkMember{
 			//System.out.println("El myId antes de guardar datos es: "+ myId);
 			switch (tableManager.getPosicion(myId)) {
 			case 0:
-				//DHTTables.put(0, tabla0.get(0));// Al servidor 0 le metemos la tabla 0
 				DHTTables.put(1, tabla1.get(1));// Al servidor 0 le metemos la tabla 1
 				break;
 			case 1:
-				//DHTTables.put(1, tabla1.get(1));// Al servidor 1 le metemos la tabla 1
 				DHTTables.put(2, tabla2.get(2));// Al servidor 1 le metemos la tabla 2
 				break;
 			default:
-				//DHTTables.put(2, tabla2.get(2));// Al servidor 2 le metemos la tabla 2
 				DHTTables.put(0, tabla0.get(0));// Al servidor 2 le metemos la tabla 0
 				break;
 			}
