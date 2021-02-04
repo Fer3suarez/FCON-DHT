@@ -248,7 +248,7 @@ public class zkMember{
 						Stat s = zk.exists(rootOp, false);
 						zk.getChildren(rootOp, watcherOperacion, s);
 					} else {
-						actualizarServers();
+						//actualizarServers();
 						guardarDatosEnTablas();
 						System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
 					}
@@ -344,10 +344,13 @@ public class zkMember{
 				if(!operar) LOGGER.fine("Este servidor no procesa esta operacion");
 				
 				Stat s3 = zk.exists(rootOp+"/"+myOp, false);
-				byte[] bytes3 = zk.getData(rootOp+"/"+myOp, false, s3);
+				byte[] bytes3;
+				if(rootOp+"/"+myOp == "") bytes3 = null;
+					bytes3 = zk.getData(rootOp+"/"+myOp, false, s3);
 				Operacion ope;
 				ope = deserializeOp(bytes3);
 				LOGGER.fine("La operacion es: "+ op);
+				System.out.println("La respuesta a la operacion es: " + op.getRespuestas());
 				LOGGER.fine("Se necesitan 2 respuestas para borrar la operacion");
 				comprobarRespuestas(ope, s3);
 				System.out.println("Operación terminada");
@@ -387,7 +390,7 @@ public class zkMember{
 				}
 			}
 		}
-		actualizarServers();
+		//actualizarServers();
 		guardarDatosEnTablas();
 	}
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -523,18 +526,18 @@ public class zkMember{
 			HashMap<Integer, DHTUserInterface> tabla0 = obtenerTablas(pathTablas+"-0");
 			HashMap<Integer, DHTUserInterface> tabla1 = obtenerTablas(pathTablas+"-1");
 			HashMap<Integer, DHTUserInterface> tabla2 = obtenerTablas(pathTablas+"-2");
-			System.out.println("El myId antes de guardar datos es: "+ myId);
+			//System.out.println("El myId antes de guardar datos es: "+ myId);
 			switch (tableManager.getPosicion(myId)) {
 			case 0:
-				DHTTables.put(0, tabla0.get(0));// Al servidor 0 le metemos la tabla 0
+				//DHTTables.put(0, tabla0.get(0));// Al servidor 0 le metemos la tabla 0
 				DHTTables.put(1, tabla1.get(1));// Al servidor 0 le metemos la tabla 1
 				break;
 			case 1:
-				DHTTables.put(1, tabla1.get(1));// Al servidor 1 le metemos la tabla 1
+				//DHTTables.put(1, tabla1.get(1));// Al servidor 1 le metemos la tabla 1
 				DHTTables.put(2, tabla2.get(2));// Al servidor 1 le metemos la tabla 2
 				break;
 			default:
-				DHTTables.put(2, tabla2.get(2));// Al servidor 2 le metemos la tabla 2
+				//DHTTables.put(2, tabla2.get(2));// Al servidor 2 le metemos la tabla 2
 				DHTTables.put(0, tabla0.get(0));// Al servidor 2 le metemos la tabla 0
 				break;
 			}
