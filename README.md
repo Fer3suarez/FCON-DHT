@@ -56,7 +56,7 @@ alternativa habría que usar un protocolo de comunicación alternativo y que, pr
 
 ## Diagrama de clases
 
-![Diagrama de clases](https://github.com/Fer3suarez/FCON-DHT/blob/master/DHT_2020/src/es/upm/dit/dscc/DHT/diagrama-DHT.jpg)
+![Diagrama de clases](https://github.com/Fer3suarez/FCON-DHT/blob/master/Diagrama.png)
 
 ## Pasos para la ejecución
 

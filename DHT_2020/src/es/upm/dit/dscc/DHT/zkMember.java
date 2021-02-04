@@ -85,7 +85,6 @@ public class zkMember{
 		System.out.println("Operations: " + listOperaciones.size());
 		printListOperaciones(listOperaciones);
 		} catch (KeeperException | InterruptedException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		ByteArrayOutputStream bs = new ByteArrayOutputStream();
@@ -97,7 +96,6 @@ public class zkMember{
 			os.close();
 			bytes = bs.toByteArray();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		Stat s = null;
@@ -105,7 +103,6 @@ public class zkMember{
 			s = zk.exists(rootMembers, false);
 			zk.setData(rootMembers, bytes, s.getVersion());
 		} catch (KeeperException | InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		System.out.println("Created znode nember id:"+ myId );
@@ -120,7 +117,6 @@ public class zkMember{
 				try {
 					wait();
 				} catch (Exception e) {
-					// TODO: handle exception
 				}
 			}
 		} catch (Exception e) {
@@ -355,7 +351,6 @@ public class zkMember{
 				
 			}
 		} catch (KeeperException | InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -377,13 +372,11 @@ public class zkMember{
 				System.out.println("Operations: " + listOperaciones.size());
 				printListOperaciones(listOperaciones);
 			} catch (InterruptedException | KeeperException e) {
-				// TODO Auto-generated catch block
 				try {
 					listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
 					System.out.println("Operations: " + listOperaciones.size());
 					printListOperaciones(listOperaciones);
 				} catch (KeeperException | InterruptedException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
@@ -453,8 +446,8 @@ public class zkMember{
 	
 	public boolean manageServers(List<String> newServer) {
 		String address = null;
-			// TODO: Handle if on servers fails before creating the first quorum
-			// TODO: Currently supports one failure. Check if there are more than 1 fail
+			// Handle if on servers fails before creating the first quorum
+			// Currently supports one failure. Check if there are more than 1 fail
 			//       Supposed that no server fails until there are quorum
 		if (previousServer != null && newServer.size() < previousServer.size()) {
 			LOGGER.warning("A server has failed. There is no quorum!!!!!");
@@ -524,16 +517,19 @@ public class zkMember{
 			HashMap<Integer, DHTUserInterface> tabla0 = obtenerTablas(pathTablas+"-0");
 			HashMap<Integer, DHTUserInterface> tabla1 = obtenerTablas(pathTablas+"-1");
 			HashMap<Integer, DHTUserInterface> tabla2 = obtenerTablas(pathTablas+"-2");
-			//System.out.println("El myId antes de guardar datos es: "+ myId);
 			switch (tableManager.getPosicion(myId)) {
+			// TO | T1 | T2
+			//-------------
+			// S0 | S1 | S2
+			// S2 | S0 | S1
 			case 0:
-				DHTTables.put(1, tabla1.get(1));// Al servidor 0 le metemos la tabla 1
+				DHTTables.put(1, tabla1.get(1));
 				break;
 			case 1:
-				DHTTables.put(2, tabla2.get(2));// Al servidor 1 le metemos la tabla 2
+				DHTTables.put(2, tabla2.get(2));
 				break;
 			default:
-				DHTTables.put(0, tabla0.get(0));// Al servidor 2 le metemos la tabla 0
+				DHTTables.put(0, tabla0.get(0));
 				break;
 			}
 		}
@@ -547,7 +543,6 @@ public class zkMember{
 			s = zk.exists(path, false);
 			bytes = zk.getData(path, false, s);
 		} catch (KeeperException | InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		if(bytes.length != 0) {
@@ -577,7 +572,6 @@ public class zkMember{
 			Stat s = zk.exists(path, false);
 			if(s!=null) zk.setData(path, bytes, s.getVersion());
 		} catch (KeeperException | InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -593,7 +587,6 @@ public class zkMember{
 			os.writeObject(tabla);
 			os.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -624,7 +617,6 @@ public class zkMember{
 			os.writeObject(op);
 			os.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -647,4 +639,3 @@ public class zkMember{
 		return null;
 	}
 }
-
