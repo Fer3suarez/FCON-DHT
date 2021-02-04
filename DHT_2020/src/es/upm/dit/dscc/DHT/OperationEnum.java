@@ -1,6 +1,6 @@
 package es.upm.dit.dscc.DHT;
 
-public enum OperationEnum {
+enum OperationEnum {
 	PUT_MAP,
 	GET_MAP,
 	REMOVE_MAP,

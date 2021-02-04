@@ -31,6 +31,7 @@ public class operationBlocking {
 	}
 
 	public synchronized void receiveOperation(OperationsDHT  operation) {
+		waiting = true;
 		if (!waiting) {
 			LOGGER.severe("Invoke sendOperation while no waiting");
 			System.out.println("Invoke sendOperation while no waiting");

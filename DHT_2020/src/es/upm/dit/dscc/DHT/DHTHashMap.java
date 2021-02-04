@@ -48,7 +48,7 @@ public class DHTHashMap implements DHTUserInterface, Serializable{
 		ArrayList<Integer> list = new ArrayList<Integer>();
 		values = hashMap.values();
 		for (Iterator<Integer> iterator = values.iterator(); iterator.hasNext();) {
-			Integer integer = (Integer) iterator.next();
+			Integer integer = iterator.next();
 			list.add(integer);
 		}
 		return list;
@@ -64,7 +64,7 @@ public class DHTHashMap implements DHTUserInterface, Serializable{
 		ArrayList<Integer> list = new ArrayList<Integer>();
 		list = 	this.values();
 		for (Iterator<Integer> iterator = list.iterator(); iterator.hasNext();) {
-			Integer values = (Integer) iterator.next();
+			Integer values = iterator.next();
 			aux = aux + " " + values;
 		}
 		return aux;

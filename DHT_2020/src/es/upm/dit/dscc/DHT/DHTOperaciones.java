@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Set;
 
 public class DHTOperaciones implements DHTUserInterface {
@@ -38,7 +37,7 @@ public class DHTOperaciones implements DHTUserInterface {
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);
 		byte[] bytes = serialize(datosOperacion); //Serializar datos de la operacion
 		zkMember.crearZnodeOperacion(bytes);
-		operation = mutex.sendOperation();
+		//operation = mutex.sendOperation();
 		return operation.getValue();
 	}
 

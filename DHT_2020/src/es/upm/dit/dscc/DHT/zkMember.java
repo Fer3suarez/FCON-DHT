@@ -51,12 +51,12 @@ public class zkMember{
 	
 	public zkMember(int nServersMax, int nReplicas, operationBlocking mutex, 
 			TableManager tableManager, DHTUserInterface dht) {
-		this.nServers     = 0;
-		this.mutex        = mutex;
-		this.nServersMax  = nServersMax;
+		zkMember.nServers     = 0;
+		zkMember.mutex        = mutex;
+		zkMember.nServersMax  = nServersMax;
 		this.nReplicas    = nReplicas;
-		this.tableManager = tableManager;
-		this.dht          = dht;
+		zkMember.tableManager = tableManager;
+		zkMember.dht          = dht;
 		
 		// Select a random zookeeper server
 		Random rand = new Random();
@@ -145,7 +145,7 @@ public class zkMember{
 				myId = myId.replace(rootMembers + "/", "");
 				list = zk.getChildren(rootMembers, watcherMember, s); //this, s);
 				Collections.sort(list);
-				this.tableManager.setLocalAddress(myId);
+				zkMember.tableManager.setLocalAddress(myId);
 				this.localAddress = myId;
 				return list;
 			} catch (KeeperException e) {
@@ -173,7 +173,7 @@ public class zkMember{
 	private void printListMembers (List<String> list) {
 		System.out.println("Remaining # members:" + list.size());
 		for (Iterator<String> iterator = list.iterator(); iterator.hasNext();) {
-			String string = (String) iterator.next();
+			String string = iterator.next();
 			System.out.print(string + ", ");				
 		}
 		System.out.println();
@@ -182,7 +182,7 @@ public class zkMember{
 	private static void printListOperaciones (List<String> list) {
 		System.out.println("Remaining # operaciones:" + list.size());
 		for (Iterator<String> iterator = list.iterator(); iterator.hasNext();) {
-			String string = (String) iterator.next();
+			String string = iterator.next();
 			System.out.print(string + ", ");
 		}
 		System.out.println();
@@ -194,6 +194,7 @@ public class zkMember{
 		
 		// Notified when the session is created
 		private static Watcher cWatcher = new Watcher() {
+			@Override
 			public void process (WatchedEvent e) {
 				System.out.println("Created session");
 				notify();
@@ -202,6 +203,7 @@ public class zkMember{
 
 		// Notified when the number of children in /member is updated
 		private Watcher  watcherMember = new Watcher() {
+			@Override
 			public void process(WatchedEvent event) {
 				System.out.println("------------------Watcher Member------------------\n");		
 				try {
@@ -218,6 +220,7 @@ public class zkMember{
 		};
 		
 		private static Watcher  watcherOperacion = new Watcher() {
+			@Override
 			public void process(WatchedEvent event) {
 				System.out.println("------------------Watcher Operacion------------------\n");		
 				try {
@@ -277,8 +280,9 @@ public class zkMember{
 	private static void comprobarRespuestas(Operacion op, Stat s) {
 		boolean opOk = false;
 		int[] respuestas = op.getRespuestas();
-		if(respuestas[0] != 0 || respuestas[1] != 0) opOk = true;
-		if(opOk) {
+		boolean eliminar = false;
+		if(respuestas[0] != 0 || respuestas[1] != 0) opOk = eliminar = true;
+		if(opOk && eliminar) {
 			System.out.println("Se ha recibido la respuesta y se puede borrar la operacion");
 			System.out.println("Se ha eliminado el znode de la operacion: "+ myOp);
 			mutex.receiveOperation(op.getOperacion());
@@ -291,9 +295,19 @@ public class zkMember{
 				guardarInfoEnTablas();
 			} catch (InterruptedException | KeeperException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				List<String> listOperaciones;
+				try {
+					listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
+					System.out.println("Operations: " + listOperaciones.size());
+					printListOperaciones(listOperaciones);
+				} catch (KeeperException | InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				guardarInfoEnTablas();
 			}
 		}
+		guardarInfoEnTablas();
 	}
 		
 	public void confOperaciones() {
@@ -364,6 +378,7 @@ public class zkMember{
 					op.setRespuestas(respuestas);
 					op.setOperacion(o);
 					byte [] data = serializeOp(op);
+					s = zk.exists(rootOp+"/"+myOp, false);
 					s = zk.exists(rootOp+"/"+myOp, false);
 					zk.setData(rootOp+"/"+myOp, data, s.getVersion());
 				}
@@ -467,7 +482,7 @@ public class zkMember{
 			if (newServer.size() > nServers) {
 				if (nServers == 0 && newServer.size()>0) {
 					for (Iterator<String> iterator = newServer.iterator(); iterator.hasNext();) {
-						String itAddress = (String) iterator.next();
+						String itAddress = iterator.next();
 						addServer(itAddress);
 						LOGGER.fine("Added a server. NServers: " + nServers +  
 								"Server: " + itAddress + ".");

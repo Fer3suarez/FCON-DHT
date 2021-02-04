@@ -40,26 +40,32 @@ public class DHTManager implements DHTUserInterface {
 		return zkMember.isQuorun();
 	}
 	
+	@Override
 	public Integer put(DHT_Map map) {
 		return dht.put(map);
 	}
 	
+	@Override
 	public Integer get(String key) {
 		return dht.get(key);
 	}
 
+	@Override
 	public Integer remove(String key) {
 		return dht.remove(key);
 	}
 	
+	@Override
 	public boolean containsKey(String key) {
 		return dht.containsKey(key);
 	}
 
+	@Override
 	public Set<String> keySet() {
 		return dht.keySet();
 	}
 
+	@Override
 	public ArrayList<Integer> values() {
 		return dht.values();
 	}
