@@ -1,6 +1,8 @@
 package es.upm.dit.dscc.DHT;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 public class TableManager {
 

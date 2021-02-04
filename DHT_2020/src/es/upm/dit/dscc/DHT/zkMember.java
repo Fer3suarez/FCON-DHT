@@ -67,6 +67,7 @@ public class zkMember{
 		createSessionZK(i);
 		List<String> list = null;
 		list = confZK(list);
+		Collections.sort(list);
 		manageServers(list);
 		actualizarServers();
 		guardarDatosEnTablas();
@@ -81,6 +82,7 @@ public class zkMember{
 			}
 			s2 = zk.exists(rootOp, false);
 			List<String> listOperaciones = zk.getChildren(rootOp, watcherOperacion, s2);
+			Collections.sort(list);
 			System.out.println("Operations: " + listOperaciones.size());
 			printListOperaciones(listOperaciones);
 		} catch (KeeperException | InterruptedException e1) {
@@ -110,7 +112,6 @@ public class zkMember{
 		System.out.println("Created znode nember id:"+ myId );
 		System.out.println("Created cluster ZK with: " + list.size() + " members");
 		printListMembers(list);
-		// Add the process to the members, servers and tables in zookeeper
 	}
 	
 	public void createSessionZK(int i) {
@@ -118,9 +119,7 @@ public class zkMember{
 			if (zk == null) {
 				zk = new ZooKeeper(hosts[i], SESSION_TIMEOUT, cWatcher);
 				try {
-					// Wait for creating the session. Use the object lock
 					wait();
-					//zk.exists("/",false);
 				} catch (Exception e) {
 					// TODO: handle exception
 				}
@@ -132,7 +131,6 @@ public class zkMember{
 	
 	public List<String> confZK(List<String> list) {
 		if (zk != null) {
-			// Create a folder for members and include this process/server
 			try {
 				// Create a members folder, if it is not created
 				Stat s = zk.exists(rootMembers, false); //this);
@@ -147,6 +145,7 @@ public class zkMember{
 				Stat s1 = zk.exists(pathTablas+"-1", false); //this);
 				Stat s2 = zk.exists(pathTablas+"-2", false); //this);
 				if(s0 == null && s1 == null && s2 == null) {
+					// Created the znodes, if it is not created.
 					zk.create(pathTablas+"-0", new byte[0], 
 							Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 					zk.create(pathTablas+"-1", new byte[0], 
@@ -204,11 +203,10 @@ public class zkMember{
 		}
 		System.out.println();
 	}
-	
 //-----------------------------------------------------------------------------------------------------------------------------
 //-----------------------------------------------------WATCHERS----------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------------------------------
-		
+
 		// Notified when the session is created
 		private static Watcher cWatcher = new Watcher() {
 			@Override
@@ -226,6 +224,7 @@ public class zkMember{
 				try {
 					System.out.println("        Update!!");
 					List<String> list = zk.getChildren(rootMembers,  watcherMember); //this);
+					Collections.sort(list);
 					manageServers(list);
 					actualizarServers();
 					printListMembers(list);
@@ -242,12 +241,12 @@ public class zkMember{
 				System.out.println("------------------Watcher Operacion------------------\n");		
 				try {
 					List<String> list = zk.getChildren(rootOp,  watcherOperacion); //this);
+					Collections.sort(list);
 					if(list.size() > 0) {
 						printListOperaciones(list);
 						procesarOperacion();
 						Stat s = zk.exists(rootOp, false);
 						zk.getChildren(rootOp, watcherOperacion, s);
-						System.out.println(">>> Enter option: 1) Put. 2) Get. 3) Remove. 4) ContainKey  5) Values 7) Init 0) Exit");				
 					} else {
 						actualizarServers();
 						guardarDatosEnTablas();
@@ -264,14 +263,10 @@ public class zkMember{
 //-----------------------------------------------------------------------------------------------------------------------------
 	public static void crearZnodeOperacion(byte[] bytes) {
 		String[] hosts = {"127.0.0.1:2181", "127.0.0.1:2181", "127.0.0.1:2181"};
-		// Select a random zookeeper server
 		Random rand = new Random();
 		int i = rand.nextInt(hosts.length);
-		// Add the process to the members, servers and tables in zookeeper
 		if (zk != null) {
-			// Create a folder for members and include this process/server
 			try {
-				// Create a members folder, if it is not created
 				String response = new String();
 				Stat s = zk.exists(rootOp, false); //this);
 				if (s == null) {
@@ -285,6 +280,7 @@ public class zkMember{
 						Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
 				myOp = myOp.replace(rootOp + "/", "");
 				List<String> list = zk.getChildren(rootOp, false, s); //this, s);
+				Collections.sort(list);
 				System.out.println("Created znode operation id: "+ myOp);
 			} catch (KeeperException e) {
 				System.out.println("The session with Zookeeper failes. Closing");
@@ -300,6 +296,7 @@ public class zkMember{
 		boolean operar = false;
 		try {
 			list = zk.getChildren(rootOp, false);
+			Collections.sort(list);
 			myOp = list.get(0);
 			if(list.indexOf(myOp.substring(myOp.lastIndexOf('/')+1)) == 0) {
 				LOGGER.fine("Puedo procesar la operacion");
@@ -371,15 +368,15 @@ public class zkMember{
 			LOGGER.fine("Se ha recibido la respuesta y se puede borrar la operacion");
 			LOGGER.fine("Se ha eliminado el znode de la operacion: "+ myOp);
 			mutex.receiveOperation(op.getOperacion());
+			List<String> listOperaciones ;
 			try {
 				s = zk.exists(rootOp+"/"+myOp, false);
 				if(s != null) zk.delete(rootOp+"/"+myOp, s.getVersion());
-				List<String> listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
+				listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
 				System.out.println("Operations: " + listOperaciones.size());
 				printListOperaciones(listOperaciones);
 			} catch (InterruptedException | KeeperException e) {
 				// TODO Auto-generated catch block
-				List<String> listOperaciones;
 				try {
 					listOperaciones = zk.getChildren(rootOp, watcherOperacion, s);
 					System.out.println("Operations: " + listOperaciones.size());

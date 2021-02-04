@@ -33,6 +33,7 @@ public class DHTMain {
 			dht.put(new DHT_Map("Daniel", 4));
 			dht.put(new DHT_Map("Eugenio", 5));
 			dht.put(new DHT_Map("Zamorano", 6));
+			dht.put(new DHT_Map("Fernando", 7));
 	}
 
 	public DHT_Map putMap(Scanner sc) {
