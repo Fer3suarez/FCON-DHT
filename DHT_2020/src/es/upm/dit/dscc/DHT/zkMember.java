@@ -294,9 +294,14 @@ public class zkMember{
 			Collections.sort(list);
 			myOp = list.get(0);
 			if(list.indexOf(myOp.substring(myOp.lastIndexOf('/')+1)) == 0) {
-				LOGGER.fine("Puedo procesar la operacion");
+				LOGGER.fine("Procesando operacion...");
 				Stat s = zk.exists(rootOp, false);
-				byte[] bytes = zk.getData(rootOp+"/"+myOp, false, s);
+				byte[] bytes;
+				try {
+					bytes = zk.getData(rootOp+"/"+myOp, false, s);
+				} catch (Exception e) {
+					bytes = null;
+				}
 				Operacion op = deserializeOp(bytes);
 				int[] nodos = op.getNodos();
 				for (int j = 0; j < nodos.length; j++) {
@@ -334,14 +339,17 @@ public class zkMember{
 					op.setOperacion(o);
 					byte [] data = serializeOp(op);
 					s = zk.exists(rootOp+"/"+myOp, false);
-					if(s!=null) zk.setData(rootOp+"/"+myOp, data, s.getVersion());
+					zk.setData(rootOp+"/"+myOp, data, s.getVersion());
 				}
 				if(!operar) LOGGER.fine("Este servidor no procesa esta operacion");
 				
 				Stat s3 = zk.exists(rootOp+"/"+myOp, false);
 				byte[] bytes3;
-				if(rootOp+"/"+myOp == "") bytes3 = null;
+				try {
 					bytes3 = zk.getData(rootOp+"/"+myOp, false, s3);
+				} catch (Exception e) {
+					bytes3 = null;
+				}
 				Operacion ope;
 				ope = deserializeOp(bytes3);
 				LOGGER.fine("La operacion es: "+ op);
