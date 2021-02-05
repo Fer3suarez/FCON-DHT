@@ -24,7 +24,7 @@ public class TableManager {
 	public Integer getPos (String key) {
 		int hash =	key.hashCode();
 		if (hash < 0) {
-			LOGGER.finest("Hash value is negative!!!!!");
+			LOGGER.fine("Hash value is negative!!!!!");
 			hash = -hash;
 		}
 		int segment = Integer.MAX_VALUE / (nServersMax); // No negatives

@@ -31,7 +31,7 @@ public class DHTOperaciones implements DHTUserInterface {
 	public Integer put(DHT_Map map) {
 	
 		OperationsDHT operation; 
-		LOGGER.finest("PUT: Is invoked");
+		LOGGER.fine("PUT: Is invoked");
 		operation = new OperationsDHT(OperationEnum.PUT_MAP, map);
 		int nodes[] = tableManager.getNodes(map.getKey());
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);
@@ -52,7 +52,7 @@ public class DHTOperaciones implements DHTUserInterface {
 	@Override
 	public Integer get(String key) {
 		OperationsDHT operation; 
-		LOGGER.finest("GET: Is invoked");
+		LOGGER.fine("GET: Is invoked");
 		operation = new OperationsDHT(OperationEnum.GET_MAP, key);
 		int nodes[] = tableManager.getNodes(key);
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);
@@ -73,7 +73,7 @@ public class DHTOperaciones implements DHTUserInterface {
 	@Override
 	public Integer remove(String key) {
 		OperationsDHT operation; 
-		LOGGER.finest("GET: Is invoked");
+		LOGGER.fine("GET: Is invoked");
 		operation = new OperationsDHT(OperationEnum.REMOVE_MAP, key);
 		int nodes[] = tableManager.getNodes(key);
 		Operacion datosOperacion = new Operacion(operation, nodes, nReplicas);

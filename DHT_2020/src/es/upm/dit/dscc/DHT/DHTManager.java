@@ -23,9 +23,9 @@ public class DHTManager implements DHTUserInterface {
 			configure();
 		}
 		this.localAddress = zkMember.getLocalAddress();
-		LOGGER.finest("Añadido myId a localAddress: " + this.localAddress);
+		LOGGER.fine("Añadido myId a localAddress: " + this.localAddress);
 		this.tableManager.setLocalAddress(this.localAddress);
-		LOGGER.finest("End of configuration");
+		LOGGER.fine("End of configuration");
 	}
 
 	private void configure() {
